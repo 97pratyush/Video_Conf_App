@@ -1,3 +1,4 @@
+from ctypes import alignment
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
@@ -32,7 +33,7 @@ class VideoConferencingHomePage(QLabel):
     Slot()
     def show_video_action(self):
         self.show_video_button.setText("Video needs to be shown")
-        self.video_size = QSize(320, 240)
+        self.video_size = QSize(320, 240, alignment = Qt.AlignCenter)
         self.setup_ui()
         self.setup_camera()
     
