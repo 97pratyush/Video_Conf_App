@@ -2,7 +2,7 @@ from ctypes import alignment
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
-import sys, cv2, qimage2ndarray
+import sys, cv2, qimage2ndarray, ffmpeg
 
 class VideoConferencingHomePage(QLabel):
     def __init__(self):
@@ -72,7 +72,7 @@ class VideoConferencingHomePage(QLabel):
         _, frame = self.capture.read()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.flip(frame, 1)
-        image = qimage2ndarray.array2qimage(frame)  #SOLUTION FOR MEMORY LEAK
+        image = qimage2ndarray.array2qimage(frame)
         self.image_label.setPixmap(QPixmap.fromImage(image))
 
 if __name__ == "__main__":
