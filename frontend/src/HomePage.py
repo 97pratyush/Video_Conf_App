@@ -2,7 +2,8 @@ from ctypes import alignment
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
-import sys, cv2, qimage2ndarray, ffmpeg
+import sys, cv2, qimage2ndarray
+from ffmpeg_streaming import Formats, Bitrate, Representation, Size, input
 
 class VideoConferencingHomePage(QLabel):
     def __init__(self):
@@ -10,17 +11,34 @@ class VideoConferencingHomePage(QLabel):
 
         self.title = QLabel("<font color=#fc1803 size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
         self.show_video_button = QPushButton("Show your Video")
+        self.show_local_video_button = QPushButton("Show Local Video")
         self.join_meeting_button = QPushButton("Join Meeting")
         self.create_meeting_button = QPushButton("Create Meeting")
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.title)
         self.layout.addWidget(self.show_video_button)
+        self.layout.addWidget(self.show_local_video_button)
         self.layout.addWidget(self.join_meeting_button)
         self.layout.addWidget(self.create_meeting_button)
 
         self.show_video_button.clicked.connect(self.show_video_action)
+        self.show_local_video_button.clicked.connect(self.show_local_video_action)
         self.join_meeting_button.clicked.connect(self.join_meeting_action)
         self.create_meeting_button.clicked.connect(self.create_meeting_action)
+
+    Slot()
+    def show_local_video_action(self):
+        # input = ffmpeg.input('')
+        # audio = input.audio.filter("aecho", 0.8, 0.9, 1000, 0.3)
+        # video = input.video.hflip()
+        # out = ffmpeg.output(audio, video, 'out.mp4')
+        video = input("0:0", capture=True)
+
+        dash = video.dash(Formats.h264())
+        _480p  = Representation(Size(854, 480), Bitrate(750 * 1024, 192 * 1024))
+        _720p  = Representation(Size(1280, 720), Bitrate(2048 * 1024, 320 * 1024))
+        dash.representations(_480p, _720p)
+        dash.output('../output/dash.mpd')
 
     Slot()
     def join_meeting_action(self):
