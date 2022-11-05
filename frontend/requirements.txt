@@ -2,3 +2,4 @@ pyside6==6.3.2
 opencv-python==4.5.5.64
 qimage2ndarray==1.9.0
 ffmpeg-python==0.2.0
+python-ffmpeg-video-streaming>=0.1

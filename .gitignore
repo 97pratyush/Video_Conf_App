@@ -1,7 +1,10 @@
+# Custom Hidden Files/Folders
 lib
 bin
 *.cfg
 *.DS_Store
+output/
+include/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
