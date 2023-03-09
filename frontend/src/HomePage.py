@@ -9,7 +9,7 @@ FRAME_WIDTH = 320
 FRAME_HEIGHT = 240
 
 # Define the IP address and port number of the server
-SERVER_IP = '10.0.0.64'
+SERVER_IP = 'localhost'
 SERVER_PORT = 1234
 
 # Video Codec
@@ -80,7 +80,7 @@ class VideoConferencingHomePage(QLabel):
         self.stream_label = QLabel()
         self.stream_label.setFixedSize(self.video_size)
 
-        thread_display_stream_frame = threading.Thread(target=self.display_stream_frame)
+        thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
 
         self.display_frame_button = QPushButton("Display from Server")
         self.display_frame_button.clicked.connect(thread_display_stream_frame.start())
@@ -154,41 +154,45 @@ class VideoConferencingHomePage(QLabel):
 
         limit = 0
 
-        while(True):
-            # Read a frame from the network stream
-            frame_data = self.recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 3)
+        try:
+            while(True):
+                # Read a frame from the network stream
+                frame_data = self.recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 3)
 
-            if len(frame_data) != 320*240*3:
-                print("Incorrect Frame Data : " + frame_data.decode("utf-8"))
-                return
+                if len(frame_data) != 320*240*3:
+                    print("Incorrect Frame Data : " + frame_data.decode("utf-8"))
+                    return
 
-            if frame_data:
-                print("Received a frame from server")
-                # Convert the frame data to a numpy array
-                frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
-                frame = frame.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
+                if frame_data:
+                    print("Received a frame from server")
+                    # Convert the frame data to a numpy array
+                    frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
+                    frame = frame.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
 
-                # Convert the frame from BGR to RGB
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame = cv2.flip(frame, 1)
+                    # Convert the frame from BGR to RGB
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame = cv2.flip(frame, 1)
 
-                # Create a QImage from the frame data
-                # image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
-                image = qimage2ndarray.array2qimage(frame)
-                
-                # Create a QPixmap from the QImage
-                pixmap = QPixmap.fromImage(image)
+                    # Create a QImage from the frame data
+                    # image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
+                    image = qimage2ndarray.array2qimage(frame)
+                    
+                    # Create a QPixmap from the QImage
+                    pixmap = QPixmap.fromImage(image)
 
-                # Set the pixmap in the stream frame label
-                self.stream_label.setPixmap(pixmap)
-            else:
-                limit += 1
+                    # Set the pixmap in the stream frame label
+                    self.stream_label.setPixmap(pixmap)
+                else:
+                    limit += 1
 
-            if(limit >= 5):
-                print("Not receiving any frame from the server. Closing read operation.")
-                self.recv_process.stdin.close()
-                self.recv_process.wait()
-                break
+                if(limit >= 5):
+                    print("Not receiving any frame from the server. Closing read operation.")
+                    self.recv_process.stdin.close()
+                    self.recv_process.wait()
+                    break
+        except:
+            self.recv_process.stdin.close()
+            self.recv_process.wait()
 
 if __name__ == "__main__":
     app = QApplication([])
