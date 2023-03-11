@@ -135,9 +135,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-<<<<<<< HEAD
-=======
->>>>>>> Stashed changes
 >>>>>>> master
-frontend/src/temp.py
-frontend/src/Test.py
