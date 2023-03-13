@@ -13,7 +13,7 @@ SERVER_IP = 'localhost'
 SERVER_PORT = 1234
 
 # Video Codec
-VIDEO_CODEC = 'mpegts'
+VIDEO_CODEC = 'h264'
 
 class VideoConferencingHomePage(QLabel):
     def __init__(self):
@@ -80,11 +80,8 @@ class VideoConferencingHomePage(QLabel):
         self.stream_label = QLabel()
         self.stream_label.setFixedSize(self.video_size)
 
-        thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
-
         self.display_frame_button = QPushButton("Display from Server")
-        self.display_frame_button.clicked.connect(thread_display_stream_frame.start())
-        # self.display_frame_button.clicked.connect(self.start_displaying_server_stream)
+        self.display_frame_button.clicked.connect(self.start_stream_thread)
 
         self.quit_button = QPushButton("Quit")
         self.quit_button.clicked.connect(self.close)
@@ -149,6 +146,10 @@ class VideoConferencingHomePage(QLabel):
         self.stream.stdin.write(frame.tobytes())
         # self.stream.stdin.flush()
 
+    def start_stream_thread(self):
+        thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
+        thread_display_stream_frame.start()
+
     def display_stream_frame(self):
         print("Reading Frame from Server")
 
@@ -159,7 +160,7 @@ class VideoConferencingHomePage(QLabel):
                 # Read a frame from the network stream
                 frame_data = self.recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 3)
 
-                if len(frame_data) != 320*240*3:
+                if len(frame_data) != FRAME_WIDTH * FRAME_HEIGHT * 3:
                     print("Incorrect Frame Data : " + frame_data.decode("utf-8"))
                     return
 
