@@ -1,8 +1,8 @@
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
-import sys, cv2, qimage2ndarray
-import numpy, subprocess, threading
+from mss import mss
+import sys, cv2, qimage2ndarray, numpy, subprocess, threading
 
 # Define the dimensions of the video frames
 FRAME_WIDTH = 320
@@ -13,25 +13,32 @@ SERVER_IP = 'localhost'
 SERVER_PORT = 1234
 
 # Video Codec
-VIDEO_CODEC = 'mpegts'
+VIDEO_CODEC = 'h264'
 
 class VideoConferencingHomePage(QLabel):
     def __init__(self):
         super().__init__()
 
-        self.title = QLabel("<font color=#fc1803 size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
+        self.title = QLabel("<font color=white size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
         self.show_opencv_video_button = QPushButton("Show Video from OpenCV")
         self.join_meeting_button = QPushButton("Join Meeting")
         self.create_meeting_button = QPushButton("Create Meeting")
+        self.screen_share_button = QPushButton("Screen Share")
+        self.quit_button = QPushButton("Quit")
+
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.title)
         self.layout.addWidget(self.show_opencv_video_button)
         self.layout.addWidget(self.join_meeting_button)
         self.layout.addWidget(self.create_meeting_button)
+        self.layout.addWidget(self.screen_share_button)
+        self.layout.addWidget(self.quit_button)
 
         self.show_opencv_video_button.clicked.connect(self.show_opencv_video_action)
         self.join_meeting_button.clicked.connect(self.join_meeting_action)
         self.create_meeting_button.clicked.connect(self.create_meeting_action)
+        self.screen_share_button.clicked.connect(self.screen_share_action)
+        self.quit_button.clicked.connect(self.close)
 
         send_command = ['ffmpeg', 
                     '-f', 'rawvideo', 
@@ -41,7 +48,7 @@ class VideoConferencingHomePage(QLabel):
                     '-c:v', 'libx264',
                     '-preset', 'ultrafast',
                     '-tune', 'zerolatency',
-                    '-f', 'h264',
+                    '-f', f'{VIDEO_CODEC}',
                     f'udp://{SERVER_IP}:{SERVER_PORT}/stream'
         ]
         self.stream = subprocess.Popen(send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -62,11 +69,21 @@ class VideoConferencingHomePage(QLabel):
     def create_meeting_action(self):
         self.create_meeting_button.setText("Create Button to be implemented")
 
+    Slot()
+    def screen_share_action(self):
+        self.bounding_box = {'top': 100, 'left': 0, 'width': 400, 'height': 300}
+        sct = mss()
+        while True:
+            screenshot = sct.grab(self.bounding_box)
+            cv2.imshow('screen', numpy.array(screenshot))
+
+            if (cv2.waitKey(1) & 0xFF) == ord('q'):
+                cv2.destroyAllWindows()
+                break
 
     # OpenCV Implementation
     Slot()
     def show_opencv_video_action(self):
-        self.show_opencv_video_button.setText("Video needs to be shown")
         self.video_size = QSize(320, 240, alignment = Qt.AlignCenter)
         self.setup_ui()
         self.setup_camera()
@@ -80,11 +97,8 @@ class VideoConferencingHomePage(QLabel):
         self.stream_label = QLabel()
         self.stream_label.setFixedSize(self.video_size)
 
-        thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
-
         self.display_frame_button = QPushButton("Display from Server")
-        self.display_frame_button.clicked.connect(thread_display_stream_frame.start())
-        # self.display_frame_button.clicked.connect(self.start_displaying_server_stream)
+        self.display_frame_button.clicked.connect(self.start_stream_thread)
 
         self.quit_button = QPushButton("Quit")
         self.quit_button.clicked.connect(self.close)
@@ -149,6 +163,10 @@ class VideoConferencingHomePage(QLabel):
         self.stream.stdin.write(frame.tobytes())
         # self.stream.stdin.flush()
 
+    def start_stream_thread(self):
+        thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
+        thread_display_stream_frame.start()
+
     def display_stream_frame(self):
         print("Reading Frame from Server")
 
@@ -159,7 +177,7 @@ class VideoConferencingHomePage(QLabel):
                 # Read a frame from the network stream
                 frame_data = self.recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 3)
 
-                if len(frame_data) != 320*240*3:
+                if len(frame_data) != FRAME_WIDTH * FRAME_HEIGHT * 3:
                     print("Incorrect Frame Data : " + frame_data.decode("utf-8"))
                     return
 
@@ -200,12 +218,12 @@ if __name__ == "__main__":
     homepage = VideoConferencingHomePage()
     homepage.resize(800, 600)
     homepage.setAutoFillBackground(True)
-    p = QPalette()
+    palette = QPalette()
     gradient = QLinearGradient(0, 0, 0, 400)
-    gradient.setColorAt(0.0, QColor(240, 240, 240))
-    gradient.setColorAt(1.0, QColor(240, 160, 160))
-    p.setBrush(QPalette.Window, QBrush(gradient))
-    homepage.setPalette(p)
+    gradient.setColorAt(0.0, QColor('darkBlue'))
+    gradient.setColorAt(1.0, QColor('darkMagenta'))
+    palette.setBrush(QPalette.Window, QBrush(gradient))
+    homepage.setPalette(palette)
     homepage.show()
 
     sys.exit(app.exec())
