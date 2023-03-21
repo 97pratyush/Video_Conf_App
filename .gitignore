@@ -135,7 +135,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
->>>>>>> master
+
 .vscode/settings.json
 .gitignore
 .DS_Store
