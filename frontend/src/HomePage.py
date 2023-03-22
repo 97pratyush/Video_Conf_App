@@ -1,6 +1,8 @@
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
+from PySide6.QtMultimedia import *
+from PySide6.QtMultimediaWidgets import QVideoWidget
 import sys, cv2, qimage2ndarray
 import numpy, subprocess, threading
 
@@ -144,7 +146,9 @@ class VideoConferencingHomePage(QLabel):
 
         # Write the frame to the network stream
         self.stream.stdin.write(frame.tobytes())
-        # self.stream.stdin.flush()
+
+        # Throw away data to pipe buffer
+        self.stream.stdin.flush()
 
     def start_stream_thread(self):
         thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
@@ -190,7 +194,7 @@ class VideoConferencingHomePage(QLabel):
                     print("Not receiving any frame from the server. Closing read operation.")
                     self.recv_process.stdin.close()
                     self.recv_process.wait()
-                    break
+                    return
         except:
             self.recv_process.stdin.close()
             self.recv_process.wait()
@@ -201,12 +205,12 @@ if __name__ == "__main__":
     homepage = VideoConferencingHomePage()
     homepage.resize(800, 600)
     homepage.setAutoFillBackground(True)
-    p = QPalette()
+    palette = QPalette()
     gradient = QLinearGradient(0, 0, 0, 400)
-    gradient.setColorAt(0.0, QColor(240, 240, 240))
-    gradient.setColorAt(1.0, QColor(240, 160, 160))
-    p.setBrush(QPalette.Window, QBrush(gradient))
-    homepage.setPalette(p)
+    gradient.setColorAt(0.0, QColor('darkBlue'))
+    gradient.setColorAt(1.0, QColor('darkMagenta'))
+    palette.setBrush(QPalette.Window, QBrush(gradient))
+    homepage.setPalette(palette)
     homepage.show()
 
     sys.exit(app.exec())

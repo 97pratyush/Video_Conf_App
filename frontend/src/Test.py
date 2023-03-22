@@ -147,7 +147,7 @@ class VideoConferencingHomePage(QLabel):
 
         # Write the frame to the network stream
         self.stream.stdin.write(frame.tobytes())
-        # self.stream.stdin.flush()
+        self.stream.stdin.flush()
 
     def display_stream_frame(self):
         print("Reading Frame from Server")

@@ -137,3 +137,5 @@ dmypy.json
 .pyre/
 >>>>>>> master
 .vscode/settings.json
+frontend/src/Test.py
+frontend/src/temp.py
