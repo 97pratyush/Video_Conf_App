@@ -1,136 +1,172 @@
-import cv2
-import numpy
-import subprocess
-from PySide6 import QtCore, QtWidgets, QtGui
+# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-# Define the dimensions of the video frames
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
+"""PySide6 Multimedia Camera Example"""
 
-# Define the IP address and port number of the server
-SERVER_IP = 'localhost'
-SERVER_PORT = 8080
+import os
+import sys
+from PySide6.QtCore import QDate, QDir, QStandardPaths, Qt, QUrl, Slot
+from PySide6.QtGui import QAction, QGuiApplication, QDesktopServices, QIcon
+from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel,
+    QMainWindow, QPushButton, QTabWidget, QToolBar, QVBoxLayout, QWidget)
+from PySide6.QtMultimedia import (QCamera, QImageCapture,
+                                  QCameraDevice, QMediaCaptureSession,
+                                  QMediaDevices)
+from PySide6.QtMultimediaWidgets import QVideoWidget
 
-class VideoStream(QtWidgets.QWidget):
+
+class ImageView(QWidget):
+    def __init__(self, previewImage, fileName):
+        super().__init__()
+
+        self._file_name = fileName
+
+        main_layout = QVBoxLayout(self)
+        self._image_label = QLabel()
+        self._image_label.setPixmap(QPixmap.fromImage(previewImage))
+        main_layout.addWidget(self._image_label)
+
+        top_layout = QHBoxLayout()
+        self._file_name_label = QLabel(QDir.toNativeSeparators(fileName))
+        self._file_name_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
+
+        top_layout.addWidget(self._file_name_label)
+        top_layout.addStretch()
+        copy_button = QPushButton("Copy")
+        copy_button.setToolTip("Copy file name to clipboard")
+        top_layout.addWidget(copy_button)
+        copy_button.clicked.connect(self.copy)
+        launch_button = QPushButton("Launch")
+        launch_button.setToolTip("Launch image viewer")
+        top_layout.addWidget(launch_button)
+        launch_button.clicked.connect(self.launch)
+        main_layout.addLayout(top_layout)
+
+    @Slot()
+    def copy(self):
+        QGuiApplication.clipboard().setText(self._file_name_label.text())
+
+    @Slot()
+    def launch(self):
+        QDesktopServices.openUrl(QUrl.fromLocalFile(self._file_name))
+
+
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # Initialize the video capture object
-        self.capture = cv2.VideoCapture(0)
-        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+        self._capture_session = None
+        self._camera = None
+        self._camera_info = None
+        self._image_capture = None
 
-        # Initialize the network stream object
-        self.stream = None
+        available_cameras = QMediaDevices.videoInputs()
+        if available_cameras:
+            self._camera_info = available_cameras[0]
+            self._camera = QCamera(self._camera_info)
+            self._camera.errorOccurred.connect(self._camera_error)
+            self._image_capture = QImageCapture(self._camera)
+            self._image_capture.imageCaptured.connect(self.image_captured)
+            self._image_capture.imageSaved.connect(self.image_saved)
+            self._image_capture.errorOccurred.connect(self._capture_error)
+            self._capture_session = QMediaCaptureSession()
+            self._capture_session.setCamera(self._camera)
+            self._capture_session.setImageCapture(self._image_capture)
 
-        # Create the GUI
-        self.setup_ui()
+        self._current_preview = QImage()
 
-        # Start the video stream
-        self.start_stream()
+        tool_bar = QToolBar()
+        self.addToolBar(tool_bar)
 
-    def setup_ui(self):
-        # Create the widgets
-        self.video_frame = QtWidgets.QLabel()
-        self.stream_frame = QtWidgets.QLabel()
-        self.quit_button = QtWidgets.QPushButton('Quit')
+        file_menu = self.menuBar().addMenu("&File")
+        shutter_icon = QIcon(os.path.join(os.path.dirname(__file__),
+                            "shutter.svg"))
+        self._take_picture_action = QAction(shutter_icon, "&Take Picture", self,
+                                            shortcut="Ctrl+T",
+                                            triggered=self.take_picture)
+        self._take_picture_action.setToolTip("Take Picture")
+        file_menu.addAction(self._take_picture_action)
+        tool_bar.addAction(self._take_picture_action)
 
-        # Create the layout
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.video_frame)
-        layout.addWidget(self.stream_frame)
+        exit_action = QAction(QIcon.fromTheme("application-exit"), "E&xit",
+                              self, shortcut="Ctrl+Q", triggered=self.close)
+        file_menu.addAction(exit_action)
 
-        # Set the layout
-        self.setLayout(layout)
+        about_menu = self.menuBar().addMenu("&About")
+        about_qt_action = QAction("About &Qt", self, triggered=qApp.aboutQt)
+        about_menu.addAction(about_qt_action)
 
-        # Connect the signals and slots
-        self.quit_button.clicked.connect(self.close)
+        self._tab_widget = QTabWidget()
+        self.setCentralWidget(self._tab_widget)
 
-    def start_stream(self):
-        # Start the network stream
-        command = ['ffmpeg',
-                   '-f', 'rawvideo',
-                   '-pix_fmt', 'bgr24',
-                   '-s', f"{FRAME_WIDTH}x{FRAME_HEIGHT}",
-                   '-i', '-',
-                   '-pix_fmt', 'yuv420p',
-                   '-f', 'mpegts',
-                   f"udp://{SERVER_IP}:{SERVER_PORT}"]
-        self.stream = subprocess.Popen(command, stdin=subprocess.PIPE)
+        self._camera_viewfinder = QVideoWidget()
+        self._tab_widget.addTab(self._camera_viewfinder, "Viewfinder")
 
-        # Start the video stream loop
+        if self._camera and self._camera.error() == QCamera.NoError:
+            name = self._camera_info.description()
+            self.setWindowTitle(f"PySide6 Camera Example ({name})")
+            self.show_status_message(f"Starting: '{name}'")
+            self._capture_session.setVideoOutput(self._camera_viewfinder)
+            self._take_picture_action.setEnabled(self._image_capture.isReadyForCapture())
+            self._image_capture.readyForCaptureChanged.connect(self._take_picture_action.setEnabled)
+            self._camera.start()
+        else:
+            self.setWindowTitle("PySide6 Camera Example")
+            self._take_picture_action.setEnabled(False)
+            self.show_status_message("Camera unavailable")
+
+    def show_status_message(self, message):
+        self.statusBar().showMessage(message, 5000)
+
+    def closeEvent(self, event):
+        if self._camera and self._camera.isActive():
+            self._camera.stop()
+        event.accept()
+
+    def next_image_file_name(self):
+        pictures_location = QStandardPaths.writableLocation(QStandardPaths.PicturesLocation)
+        date_string = QDate.currentDate().toString("yyyyMMdd")
+        pattern = f"{pictures_location}/pyside6_camera_{date_string}_{{:03d}}.jpg"
+        n = 1
         while True:
-            # Read a frame from the video capture object
-            ret, frame = self.capture.read()
-            if not ret:
-                break
+            result = pattern.format(n)
+            if not os.path.exists(result):
+                return result
+            n = n + 1
+        return None
 
-            # Display the video frame in the GUI
-            self.display_video_frame(frame)
+    @Slot()
+    def take_picture(self):
+        self._current_preview = QImage()
+        self._image_capture.captureToFile(self.next_image_file_name())
 
-            # Send the video frame to the network stream
-            self.send_video_frame(frame)
+    @Slot(int, QImage)
+    def image_captured(self, id, previewImage):
+        self._current_preview = previewImage
 
-        # Stop the network stream
-        self.stream.stdin.close()
-        self.stream.wait()
+    @Slot(int, str)
+    def image_saved(self, id, fileName):
+        index = self._tab_widget.count()
+        image_view = ImageView(self._current_preview, fileName)
+        self._tab_widget.addTab(image_view, f"Capture #{index}")
+        self._tab_widget.setCurrentIndex(index)
 
-    def display_video_frame(self, frame):
-        # Convert the frame from BGR to RGB
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    @Slot(int, QImageCapture.Error, str)
+    def _capture_error(self, id, error, error_string):
+        print(error_string, file=sys.stderr)
+        self.show_status_message(error_string)
 
-        # Create a QImage from the frame data
-        image = QtGui.QImage(frame.data, frame.shape[1], frame.shape[0],
-                             QtGui.QImage.Format_RGB888)
+    @Slot(QCamera.Error, str)
+    def _camera_error(self, error, error_string):
+        print(error_string, file=sys.stderr)
+        self.show_status_message(error_string)
 
-        # Create a QPixmap from the QImage
-        pixmap = QtGui.QPixmap.fromImage(image)
-
-        # Set the pixmap in the video frame label
-        self.video_frame.setPixmap(pixmap)
-
-    def send_video_frame(self, frame):
-        # Write the frame to the network stream
-        self.stream.stdin.write(frame.tobytes())
-        self.stream.stdin.flush()
-
-        # Receive the streamed frame from the server
-        recv_command = ['ffmpeg',
-                        '-i', f"udp://{SERVER_IP}:{SERVER_PORT}",
-                        '-pix_fmt', 'rgb24',
-                        '-f', 'rawvideo',
-                        '-']
-        recv_process = subprocess.Popen(recv_command, stdout=subprocess.PIPE)
-        while True:
-            # Read a frame from the network stream
-            frame_data = recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 3)
-            if not frame_data:
-                break
-
-            # Convert the frame data to a numpy array
-            frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
-            frame = frame.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
-
-            # Display the streamed frame in the GUI
-            self.display_stream_frame(frame)
-
-    def display_stream_frame(self, frame):
-        # Convert the frame from BGR to RGB
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Create a QImage from the frame data
-        image = QtGui.QImage(frame.data, frame.shape[1], frame.shape[0],
-                             QtGui.QImage.Format_RGB888)
-
-        # Create a QPixmap from the QImage
-        pixmap = QtGui.QPixmap.fromImage(image)
-
-        # Set the pixmap in the stream frame label
-        self.stream_frame.setPixmap(pixmap)
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-    window = VideoStream()
-    window.show()
-    app.exec_()
-
+    app = QApplication(sys.argv)
+    main_win = MainWindow()
+    available_geometry = main_win.screen().availableGeometry()
+    main_win.resize(available_geometry.width() / 3, available_geometry.height() / 2)
+    main_win.show()
+    sys.exit(app.exec())
