@@ -11,8 +11,8 @@ FRAME_WIDTH = 320
 FRAME_HEIGHT = 240
 
 # Define the IP address and port number of the server
-SERVER_IP = '10.0.0.167'
-SERVER_PORT = 1234
+SERVER_IP = '10.0.0.248'
+SERVER_PORT = 8554
 
 # Video Codec
 VIDEO_CODEC = 'h264'
@@ -23,11 +23,15 @@ class VideoConferencingHomePage(QLabel):
 
         self.title = QLabel("<font color=#fc1803 size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
         self.send_video_to_server_button = QPushButton("Send Video to Server")
+        self.receive_video_from_server_button = QPushButton("Receive Video from Server")
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.title)
         self.layout.addWidget(self.send_video_to_server_button)
+        self.layout.addWidget(self.receive_video_from_server_button)
+
 
         self.send_video_to_server_button.clicked.connect(self.send_video_to_server)
+        self.receive_video_from_server_button.clicked.connect(self.start_stream_thread)
 
 
         send_command = ['ffmpeg', 
@@ -38,29 +42,29 @@ class VideoConferencingHomePage(QLabel):
                     '-c:v', 'libx264',
                     '-preset', 'ultrafast',
                     '-tune', 'zerolatency',
-                    '-f', 'h264',
-                    f'udp://{SERVER_IP}:{SERVER_PORT}/stream'
+                    '-f', 'flv',
+                    f'rtmp://{SERVER_IP}/live/stream'
         ]
         self.stream = subprocess.Popen(send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        # recv_command = ['ffmpeg',
-        #            '-i', f'udp://{SERVER_IP}:{SERVER_PORT}/stream',
-        #            '-f', 'rawvideo',
-        #            '-pix_fmt', 'bgr24',
-        #            '-bufsize', '10M',
-        #            '-']
-        # self.recv_process = subprocess.Popen(recv_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        recv_command = ['ffmpeg',
+                   '-i', f'rtmp://{SERVER_IP}/live/stream',
+                   '-f', 'rawvideo',
+                   '-pix_fmt', 'bgr24',
+                   '-bufsize', '10M',
+                   '-']
+        self.recv_process = subprocess.Popen(recv_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # OpenCV Implementation
     Slot()
     def send_video_to_server(self):
-        self.video_size = QSize(320, 240, alignment = Qt.AlignCenter)
         self.setup_ui()
         self.setup_camera()
     
     def setup_ui(self):
         """Initialize widgets.
         """
+        self.video_size = QSize(320, 240, alignment = Qt.AlignCenter)
         self.image_label = QLabel()
         self.image_label.setFixedSize(self.video_size)
 
@@ -105,8 +109,8 @@ class VideoConferencingHomePage(QLabel):
             self.capture.release()
         # else:
 
-        thread_display_video_frame = threading.Thread(target=self.display_video_frame, args=(frame,))
-        thread_display_video_frame.start()
+        # thread_display_video_frame = threading.Thread(target=self.display_video_frame, args=(frame,))
+        # thread_display_video_frame.start()
         thread_send_video_frame = threading.Thread(target=self.send_video_frame, args=(frame,))
         thread_send_video_frame.start()
 
@@ -135,7 +139,9 @@ class VideoConferencingHomePage(QLabel):
         # Throw away data to pipe buffer
         self.stream.stdin.flush()
 
+    Slot()
     def start_stream_thread(self):
+        self.setup_ui()
         thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
         thread_display_stream_frame.start()
 
