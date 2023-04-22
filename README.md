@@ -3,7 +3,7 @@ Open Source Video Conferencing App in Qt
 
 ## To install
 ### For Frontend
-* Clone and activate venv `source bin/activate`
+* Clone and activate virtual environment
 * Run `pip install -r requirements.txt`
 * `cd src`
-* `python3 HomePage.py`
+* `python3 Client.py`
