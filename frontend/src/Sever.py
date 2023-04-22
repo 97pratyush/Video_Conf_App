@@ -12,8 +12,7 @@ FRAME_HEIGHT = 240
 
 # Define the IP address and port number of the server
 SERVER_IP = 'localhost'
-SERVER_PORT = 1235
-BROADCAST_PORT = 4000
+SERVER_PORT = 1234
 
 # Video Codec
 VIDEO_CODEC = 'h264'
@@ -33,29 +32,26 @@ class VideoConferencingHomePage(QLabel):
         self.receive_video_button.clicked.connect(self.receive_video_action)
 
 
-        # self.broadcast_command = ['ffmpeg', 
+        # send_command = ['ffmpeg', 
         #             '-f', 'rawvideo', 
         #             '-pix_fmt', 'bgr24',
         #             '-video_size', f'{FRAME_WIDTH}x{FRAME_HEIGHT}', 
-        #             '-i', f'udp://{SERVER_IP}:{SERVER_PORT}/stream',
+        #             '-i', '-',
         #             '-c:v', 'libx264',
         #             '-preset', 'ultrafast',
         #             '-tune', 'zerolatency',
         #             '-f', 'h264',
-        #             f'udp://{SERVER_IP}:{BROADCAST_PORT}/stream'
+        #             f'udp://{SERVER_IP}:{SERVER_PORT}/stream'
         # ]
-        # self.stream = subprocess.Popen(broadcast_command, stderr=subprocess.PIPE)
+        # self.stream = subprocess.Popen(send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        self.recv_command = ['ffmpeg',
+        recv_command = ['ffmpeg',
                    '-i', f'udp://{SERVER_IP}:{SERVER_PORT}/stream',
-                #    '-pix_fmt', 'bgr24',
+                   '-f', 'rawvideo',
+                   '-pix_fmt', 'bgr24',
                    '-bufsize', '10M',
-                   '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-tune', 'zerolatency',
-                    '-f', 'h264',
-                   f'udp://{SERVER_IP}:{BROADCAST_PORT}/stream']
-        # self.recv_process = subprocess.Popen(recv_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                   '-']
+        self.recv_process = subprocess.Popen(recv_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # OpenCV Implementation
     Slot()
@@ -84,23 +80,60 @@ class VideoConferencingHomePage(QLabel):
 
         self.setLayout(self.layout)
 
+    def start_receiving(self):
+        
+        # self.capture = cv2.VideoCapture(0)
+        # self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.video_size.width())
+        # self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.video_size.height()) 
 
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.start_stream_thread)
+        self.timer.start(30)
+        
+    def start_capturing(self):
+        # print("Capturing Frame")
+        ret, frame = self.capture.read()
+        # # Read a frame from the video capture object
+        if not ret:
+            # Stop the network stream
+            self.stream.stdin.close()
+            self.stream.wait()
+            self.capture.release()
+        # else:
 
-    def send_video_frame(self):
+        thread_display_video_frame = threading.Thread(target=self.display_video_frame, args=(frame,))
+        thread_display_video_frame.start()
+        thread_send_video_frame = threading.Thread(target=self.send_video_frame, args=(frame,))
+        thread_send_video_frame.start()
+
+    def display_video_frame(self, frame):
+        # print("Displaying Local Frame")
+        # Convert the frame from BGR to RGB
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.flip(frame, 1)
+
+        # Create a QImage from the frame data
+        # image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
+        image = qimage2ndarray.array2qimage(frame)
+
+        # Create a QPixmap from the QImage
+        pixmap = QPixmap.fromImage(image)
+
+        # Set the pixmap in the video frame label
+        self.image_label.setPixmap(pixmap)
+
+    def send_video_frame(self, frame):
         # print("Sending Frame to Server")
 
         # Write the frame to the network stream
-        print("Forwarding Video")
-        subprocess.run(self.recv_command)
+        self.stream.stdin.write(frame.tobytes())
 
-
-
+        # Throw away data to pipe buffer
+        self.stream.stdin.flush()
 
     def start_stream_thread(self):
-        # thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
-        # thread_display_stream_frame.start()
-        thread_send_video_frame = threading.Thread(target=self.send_video_frame)
-        thread_send_video_frame.start()
+        thread_display_stream_frame = threading.Thread(target=self.display_stream_frame, daemon=True)
+        thread_display_stream_frame.start()
 
     def display_stream_frame(self):
         print("Reading Frame from Server")
@@ -111,7 +144,7 @@ class VideoConferencingHomePage(QLabel):
             while(True):
                 # Read a frame from the network stream
                 frame_data = self.recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 3)
-                
+
                 if len(frame_data) != FRAME_WIDTH * FRAME_HEIGHT * 3:
                     print("Incorrect Frame Data : " + frame_data.decode("utf-8"))
                     return
