@@ -82,11 +82,8 @@ class VideoConferencingHomePage(QLabel):
         # self.display_frame_button = QPushButton("Display from Server")
         # self.display_frame_button.clicked.connect(self.start_stream_thread)
 
-        self.stop_sending_video_button = QPushButton("Stop sending video")
-        self.stop_sending_video_button.clicked.connect(self.stop_sending_video)
-
         self.quit_button = QPushButton("Quit")
-        self.quit_button.clicked.connect(self.close)
+        self.quit_button.clicked.connect(self.stop_sending_video)
         
         ## Clear current layout
         for i in reversed(range(self.layout.count())): 
@@ -95,7 +92,6 @@ class VideoConferencingHomePage(QLabel):
         self.layout.addWidget(self.image_label)
         self.layout.addWidget(self.stream_label)
         # self.layout.addWidget(self.display_frame_button)
-        self.layout.addWidget(self.stop_sending_video_button)
         self.layout.addWidget(self.quit_button)
 
         self.setLayout(self.layout)
@@ -105,6 +101,7 @@ class VideoConferencingHomePage(QLabel):
         self.stream.terminate()
         self.stream.kill()
         self.stream.wait()
+        self.close()
 
     def setup_camera(self):
         
@@ -124,6 +121,7 @@ class VideoConferencingHomePage(QLabel):
         while(True):
             _, frame = self.capture.read()
             self.send_video_frame(frame)
+            self.display_video_frame(frame)
         
     def send_video_frame(self, frame):
         # print("Sending Frame to Server")
