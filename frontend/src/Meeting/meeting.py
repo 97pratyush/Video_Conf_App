@@ -26,10 +26,10 @@ class MeetingPage(QMainWindow):
         # self.video_label2 = QLabel("Video Tile 2")
         # self.video_label3 = QLabel("Video Tile 3")
         # self.video_label4 = QLabel("Video Tile 4")
-        labels = []
+        self.labels = []
 
         # Create 4 Labels and add them to a list
-        for i in range(5):
+        for i in range(2):
             label = QLabel(f"Attendee {str(i + 1)}")
             label.setStyleSheet(
                 "QLabel"
@@ -42,13 +42,13 @@ class MeetingPage(QMainWindow):
                 "border-color : black;"
                 "}"
             )
-            labels.append(label)
+            self.labels.append(label)
 
         # Video Container: Grid layout of video tiles
 
         row = 0
         col = 0
-        for label in labels:
+        for label in self.labels:
             self.video_layout.addWidget(label, row, col)
             col += 1
             if col > 1:
@@ -83,7 +83,7 @@ class MeetingPage(QMainWindow):
 
         self.end_call_button = QPushButton("End Call")
         self.end_call_button.setStyleSheet(primary_cta_style)
-        self.end_call_button.clicked.connect(self.end_call)
+        # self.end_call_button.clicked.connect(self.end_call)
         # VBoxLayout: HBoxLayout Widget + End call button
         self.parent_layout.addWidget(self.meeting_container)
         self.parent_layout.addWidget(self.end_call_button)
@@ -95,6 +95,3 @@ class MeetingPage(QMainWindow):
         self.resize(700, 500)
         self.setAutoFillBackground(True)
         self.setStyleSheet("QMainWindow" "{" "background : white;" "}")
-
-    def end_call(self):
-        self.close()

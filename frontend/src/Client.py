@@ -57,7 +57,7 @@ class VideoConferencingHomePage(QLabel):
                    '-f', 'rawvideo',
                 #    '-fflags', 'nobuffer',
                    '-pix_fmt', 'bgr24',
-                #    '-bufsize', '100k',
+                   '-bufsize', '100k',
                    '-'
         ]
 
