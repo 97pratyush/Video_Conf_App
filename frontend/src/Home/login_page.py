@@ -64,7 +64,7 @@ class LoginPage(QWidget):
 
     def navigate_dashboard(self):
         payload = {"email": "krishna.gupta@sjsu.edu", "password": "password"}
-        post("login", payload)
+        # post("login", payload)
         # Get the index of the next page
         index = self.parent().currentIndex() + 2
         # Show the next page

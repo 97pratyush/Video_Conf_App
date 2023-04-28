@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from style import primary_cta_style, secondary_cta_style
 from Dashboard.join_meeting_dialog import JoinMeeting
+from Meeting.meeting import MeetingPage
+
 
 class Dashboard(QWidget):
     def __init__(self, parent=None):
@@ -33,5 +35,8 @@ class Dashboard(QWidget):
         self.setLayout(self.layout)
 
     def join_meeting(self):
-        self.join_meeting_dialog = JoinMeeting()
-        self.join_meeting_dialog.show()
+        # self.join_meeting_dialog = JoinMeeting()
+        # self.join_meeting_dialog.show()
+
+        self.meeting_page = MeetingPage()
+        self.meeting_page.show()
