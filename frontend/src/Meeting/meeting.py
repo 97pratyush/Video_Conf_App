@@ -51,7 +51,7 @@ class MeetingPage(QMainWindow):
         for label in labels:
             self.video_layout.addWidget(label, row, col)
             col += 1
-            if col > 2:
+            if col > 1:
                 col = 0
                 row += 1
 

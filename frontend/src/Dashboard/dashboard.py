@@ -17,16 +17,18 @@ class Dashboard(QWidget):
             "<font size=40>Welcome, User</font>", alignment=Qt.AlignCenter
         )
 
-        self.start_meeting = QPushButton("Create a meeting")
-        self.start_meeting.setStyleSheet(primary_cta_style)
+        self.create_meeting = QPushButton("Create a meeting")
+        self.create_meeting.setStyleSheet(primary_cta_style)
+        self.create_meeting.clicked.connect(self.start_meeting)
 
         self.join_meeting_cta = QPushButton("Join Meeting")
         self.join_meeting_cta.setStyleSheet(secondary_cta_style)
         self.join_meeting_cta.clicked.connect(self.join_meeting)
+
         self.layout = QVBoxLayout()
         self.widgets = [
             self.welcome_label,
-            self.start_meeting,
+            self.create_meeting,
             self.join_meeting_cta,
         ]
         for self.widget in self.widgets:
@@ -34,9 +36,13 @@ class Dashboard(QWidget):
 
         self.setLayout(self.layout)
 
-    def join_meeting(self):
-        # self.join_meeting_dialog = JoinMeeting()
-        # self.join_meeting_dialog.show()
-
+    def start_meeting(self):    
         self.meeting_page = MeetingPage()
         self.meeting_page.show()
+
+    def join_meeting(self):
+        self.join_meeting_dialog = JoinMeeting()
+        self.join_meeting_dialog.show()
+
+        # self.meeting_page = MeetingPage()
+        # self.meeting_page.show()///
