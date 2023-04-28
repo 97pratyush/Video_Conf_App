@@ -3,12 +3,11 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from PySide6.QtMultimedia import *
 from PySide6.QtMultimediaWidgets import QVideoWidget
-import sys, cv2, qimage2ndarray
-import numpy, subprocess, threading
+import sys, cv2, qimage2ndarray, numpy, subprocess, threading, time
 
 # Define the dimensions of the video frames
-FRAME_WIDTH = 320
-FRAME_HEIGHT = 240
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
 
 # Define the IP address and port number of the server
 SERVER_IP = '10.0.0.248'
@@ -31,43 +30,49 @@ class VideoConferencingHomePage(QLabel):
 
         self.send_video_to_server_button.clicked.connect(self.send_video_to_server)
         self.receive_video_from_server_button.clicked.connect(self.start_stream_thread)
-
-
-        send_command = ['ffmpeg', 
+        
+        self.send_command = ['ffmpeg', 
                     '-f', 'rawvideo', 
                     '-pix_fmt', 'bgr24',
-                    '-video_size', f'{FRAME_WIDTH}x{FRAME_HEIGHT}', 
+                    '-s', f'{FRAME_WIDTH}x{FRAME_HEIGHT}', 
                     '-i', '-',
+                    '-f', 'alsa',
+                    '-i', 'default',
                     '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
+                    '-preset', 'veryfast',
                     '-tune', 'zerolatency',
-                    '-b:v', '500k',
+                    '-b:v', '100k',
+                    '-c:a', 'aac', 
+                    '-ar', '44100',
+                    '-ac', '1',
+                    '-af', 'afftdn',
                     '-maxrate', '3000k',
                     '-bufsize', '100k',
                     '-f', f'{VIDEO_CODEC}',
                     f'rtmp://{SERVER_IP}/live/stream'
         ]
-        self.stream = subprocess.Popen(send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        recv_command = ['ffmpeg',
+        self.recv_command = ['ffmpeg',
                    '-i', f'rtmp://{SERVER_IP}/live/stream',
                    '-f', 'rawvideo',
-                   '-fflags', 'nobuffer',
+                #    '-fflags', 'nobuffer',
                    '-pix_fmt', 'bgr24',
-                   '-bufsize', '10M',
-                   '-']
-        self.recv_process = subprocess.Popen(recv_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                #    '-bufsize', '100k',
+                   '-'
+        ]
 
     # OpenCV Implementation
     Slot()
     def send_video_to_server(self):
         self.setup_ui()
-        self.setup_camera()
+        self.stream = subprocess.Popen(self.send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.thread_send_video_frame = threading.Thread(target=self.setup_camera)
+        self.thread_send_video_frame.start()
     
     def setup_ui(self):
         """Initialize widgets.
         """
-        self.video_size = QSize(320, 240, alignment = Qt.AlignCenter)
+        self.video_size = QSize(FRAME_WIDTH, FRAME_HEIGHT, alignment = Qt.AlignCenter)
         self.image_label = QLabel()
         self.image_label.setFixedSize(self.video_size)
 
@@ -78,7 +83,7 @@ class VideoConferencingHomePage(QLabel):
         # self.display_frame_button.clicked.connect(self.start_stream_thread)
 
         self.quit_button = QPushButton("Quit")
-        self.quit_button.clicked.connect(self.close)
+        self.quit_button.clicked.connect(self.stop_sending_video)
         
         ## Clear current layout
         for i in reversed(range(self.layout.count())): 
@@ -91,31 +96,42 @@ class VideoConferencingHomePage(QLabel):
 
         self.setLayout(self.layout)
 
+    def stop_sending_video(self):
+        print("Stopping ffmpeg sending command")
+        self.stream.terminate()
+        self.stream.kill()
+        self.stream.wait()
+        self.close()
+
     def setup_camera(self):
         
         self.capture = cv2.VideoCapture(0)
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.video_size.width())
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.video_size.height()) 
+        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.video_size.height())
 
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.start_capturing)
-        self.timer.start(30)
-        
-    def start_capturing(self):
-        # print("Capturing Frame")
-        ret, frame = self.capture.read()
-        # # Read a frame from the video capture object
-        if not ret:
-            # Stop the network stream
-            self.stream.stdin.close()
-            self.stream.wait()
-            self.capture.release()
-        # else:
-
-        # thread_display_video_frame = threading.Thread(target=self.display_video_frame, args=(frame,))
+        # thread_display_video_frame = threading.Thread(target=self.display_video_frame, args=(self.frame))
         # thread_display_video_frame.start()
-        thread_send_video_frame = threading.Thread(target=self.send_video_frame, args=(frame,))
-        thread_send_video_frame.start()
+
+        _, frame = self.capture.read()
+
+        # self.timer = QTimer()
+        # self.timer.timeout.connect(self.start_capturing)
+        # self.timer.start(30)
+
+        while(True):
+            _, frame = self.capture.read()
+            self.send_video_frame(frame)
+            self.display_video_frame(frame)
+        
+    def send_video_frame(self, frame):
+        # print("Sending Frame to Server")
+
+        # Write the frame to the network stream
+        self.stream.stdin.write(frame.tobytes())
+
+        # Throw away data to pipe buffer
+        self.stream.stdin.flush()
+        
 
     def display_video_frame(self, frame):
         # print("Displaying Local Frame")
@@ -133,14 +149,6 @@ class VideoConferencingHomePage(QLabel):
         # Set the pixmap in the video frame label
         self.image_label.setPixmap(pixmap)
 
-    def send_video_frame(self, frame):
-        # print("Sending Frame to Server")
-
-        # Write the frame to the network stream
-        self.stream.stdin.write(frame.tobytes())
-
-        # Throw away data to pipe buffer
-        self.stream.stdin.flush()
 
     Slot()
     def start_stream_thread(self):
@@ -150,6 +158,8 @@ class VideoConferencingHomePage(QLabel):
 
     def display_stream_frame(self):
         print("Reading Frame from Server")
+
+        self.recv_process = subprocess.Popen(self.recv_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         limit = 0
 
