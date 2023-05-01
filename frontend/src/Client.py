@@ -6,11 +6,11 @@ from PySide6.QtMultimediaWidgets import QVideoWidget
 import sys, cv2, qimage2ndarray, numpy, subprocess, threading, time
 
 # Define the dimensions of the video frames
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
+FRAME_WIDTH = 320
+FRAME_HEIGHT = 240
 
 # Define the IP address and port number of the server
-SERVER_IP = '10.0.0.248'
+SERVER_IP = '98.45.115.221'
 SERVER_PORT = 4000
 
 # Video Codec
@@ -65,7 +65,7 @@ class VideoConferencingHomePage(QLabel):
     Slot()
     def send_video_to_server(self):
         self.setup_ui()
-        self.stream = subprocess.Popen(self.send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.stream = subprocess.Popen(self.send_command, stdin=subprocess.PIPE)
         self.thread_send_video_frame = threading.Thread(target=self.setup_camera)
         self.thread_send_video_frame.start()
     

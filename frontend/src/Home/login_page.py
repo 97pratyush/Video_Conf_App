@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QLabel,
+    QSizePolicy
 )
 from style import textbox_style, primary_cta_style, secondary_cta_style
 from api_requests import post
@@ -40,6 +41,20 @@ class LoginPage(QWidget):
         self.password_textbox.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_textbox.setStyleSheet(textbox_style)
 
+        self.error_label = QLabel()
+        self.error_label.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
+        self.error_label.setStyleSheet(
+            "QLabel"
+            "{"
+            "color : red;"
+            "font-weight : bold;"
+            "margin-left : 100px;"
+            "margin-right : 100px;"
+            "}"
+        )
+
         self.signin_button = QPushButton("Sign In")
         self.signin_button.setStyleSheet(primary_cta_style)
         self.signin_button.clicked.connect(self.navigate_dashboard)
@@ -52,6 +67,7 @@ class LoginPage(QWidget):
         self.layout.addWidget(self.title)
         self.layout.addWidget(self.email_textbox)
         self.layout.addWidget(self.password_textbox)
+        self.layout.addWidget(self.error_label)
         self.layout.addWidget(self.signin_button)
         self.layout.addWidget(self.signup_button)
         self.setLayout(self.layout)
@@ -63,9 +79,26 @@ class LoginPage(QWidget):
         self.parent().setCurrentIndex(index)
 
     def navigate_dashboard(self):
-        payload = {"email": "krishna.gupta@sjsu.edu", "password": "password"}
-        # post("login", payload)
-        # Get the index of the next page
-        index = self.parent().currentIndex() + 2
-        # Show the next page
-        self.parent().setCurrentIndex(index)
+        self.error_label.setText("")
+        self.email = self.email_textbox.text().strip()
+        self.password = self.password_textbox.text().strip()
+        if self.email and self.password:
+            self.response = self.sign_in(self.email, self.password)
+            # print(self.response['message'])
+            self.data = self.response.json()
+            if self.response.status_code == 200 and self.data['id'] == 0:
+                self.error_label.setText("Invalid Credentials.")
+            elif self.response.status_code == 200:
+                self.user_id = self.data['id']
+                # Get the index of the next page
+                index = self.parent().currentIndex() + 2
+                # Show the next page
+                self.parent().setCurrentIndex(index)
+            else:
+                self.error_label.setText("Something went wrong.")
+        else:
+            self.error_label.setText("Please Enter Email/Password.")      
+
+    def sign_in(self, email, password):
+        payload = {"email": email, "password": password}
+        return post("login", payload)

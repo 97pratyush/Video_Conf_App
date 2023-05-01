@@ -144,11 +144,14 @@ class Dashboard(QWidget):
         self.meeting_page.labels[0].setFixedSize(self.video_size)
 
     def end_call(self):
-        self.close()
-        print("Stopping ffmpeg sending command")
-        self.stream.terminate()
-        self.stream.kill()
-        self.stream.wait()
+        try:
+            self.close()
+            print("Stopping ffmpeg sending command")
+            self.stream.terminate()
+            self.stream.kill()
+            self.stream.wait()
+        except:
+            self.close()
 
     def display_stream_frame(self):
         print("Reading Frame from Server")

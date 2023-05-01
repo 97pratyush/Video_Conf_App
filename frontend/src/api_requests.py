@@ -1,7 +1,7 @@
 import requests
 import json
 
-url = "https://aa6e-2601-642-4c05-7588-b2c7-47b2-7d3e-f8d0.ngrok-free.app"
+url = "https://31c9-2601-646-9d01-1da0-306f-58d9-970e-e48.ngrok-free.app"
 
 
 def post(endpoint, payload):
@@ -11,8 +11,8 @@ def post(endpoint, payload):
     )
 
     if response.status_code == 200:
-        data = response.json()
-        print(data)
+        data = response
+        print(data.json())
     else:
         data = response
         print("Error:", response.status_code)
