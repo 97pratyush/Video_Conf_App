@@ -1,136 +1,283 @@
-import cv2
-import numpy
-import subprocess
-from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
+from PySide6.QtMultimedia import *
+from PySide6.QtMultimediaWidgets import *
+from PySide6.QtNetwork import *
+import sys, cv2, qimage2ndarray, numpy, subprocess, threading, pyaudio
 
 # Define the dimensions of the video frames
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
+FRAME_WIDTH = 320
+FRAME_HEIGHT = 240
 
 # Define the IP address and port number of the server
-SERVER_IP = 'localhost'
-SERVER_PORT = 8080
+SERVER_IP = '10.0.0.248'
+SERVER_PORT = 4000
 
-class VideoStream(QtWidgets.QWidget):
+# Video Codec
+VIDEO_CODEC = 'flv'
+
+RTMP_URL = 'rtmp://10.0.0.248/live/test_test'
+
+class VideoConferencingHomePage(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Initialize the video capture object
-        self.capture = cv2.VideoCapture(0)
-        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
-        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
+        self.send_command = ['ffmpeg', 
+                    # '-f', 'rawvideo', 
+                    '-f', 'v4l2',
+                    '-s', f'{FRAME_WIDTH}x{FRAME_HEIGHT}', 
+                    '-i', '/dev/video0',
+                    '-f', 'alsa',
+                    '-i', 'default',
+                    '-c:v', 'libx264',
+                    '-preset', 'veryfast',
+                    '-tune', 'zerolatency',
+                    '-b:v', '100k',
+                    '-c:a', 'aac', 
+                    '-ar', '44100',
+                    '-ac', '1',
+                    '-af', 'afftdn',
+                    '-maxrate', '3000k',
+                    '-bufsize', '300k',
+                    '-f', f'{VIDEO_CODEC}',
+                    f'{RTMP_URL}'
+        ]
 
-        # Initialize the network stream object
-        self.stream = None
+        self.stream = subprocess.Popen(self.send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        # Create the GUI
+        # self.recv_command = ['ffmpeg',
+        #            '-i', f'{RTMP_URL}',
+        #            '-f', 'rawvideo',
+        #         #    '-fflags', 'nobuffer',
+        #            '-pix_fmt', 'bgr24',
+        #         #    '-bufsize', '100k',
+        #            '-'
+        # ]
+
+        self.recv_command = [
+                    'ffmpeg',
+                    '-vn',
+                    '-i', f'{RTMP_URL}',
+                    '-f', 'adts',
+                    '-'
+                ]
+
+        # self.stream = None
+        self.recv_process = None
+        self.close_called = False
+        self.receive_process_invoked = False
+        self.capture = None
+        self.audio_stream = None
+
+        self.title = QLabel("<font color=#fc1803 size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
+        self.send_video_to_server_button = QPushButton("Send Video to Server")
+        self.receive_video_from_server_button = QPushButton("Receive Video from Server")
+        self.layout = QVBoxLayout(self)
+        self.layout.addWidget(self.title)
+        self.layout.addWidget(self.send_video_to_server_button)
+        self.layout.addWidget(self.receive_video_from_server_button)
+
+        self.send_video_to_server_button.clicked.connect(self.send_video_to_server)
+        self.receive_video_from_server_button.clicked.connect(self.start_stream_thread)
+
+    def closeEvent(self, event):
+        print("Quitting Application")
+
+        self.close_called = True
+
+        if self.stream != None:
+            self.stream.terminate() 
+            self.stream.wait()
+
+        if self.capture != None:
+            self.capture.release()
+
+        if self.receive_process_invoked == True and self.recv_process != None:
+            self.recv_process.terminate()
+            self.recv_process.wait()
+
+        if self.audio_stream != None:
+            self.audio_stream.stop_stream()
+            self.audio_stream.close()
+            self.p.terminate()
+
+        super().closeEvent(event)
+
+    # OpenCV Implementation
+    Slot()
+    def send_video_to_server(self):
         self.setup_ui()
-
-        # Start the video stream
-        self.start_stream()
-
+        # thread_opencv = threading.Thread(target=self.display_video_frame_using_opencv, args=(self.image_label, RTMP_URL))
+        # thread_opencv.start()
+    
     def setup_ui(self):
-        # Create the widgets
-        self.video_frame = QtWidgets.QLabel()
-        self.stream_frame = QtWidgets.QLabel()
-        self.quit_button = QtWidgets.QPushButton('Quit')
+        """Initialize widgets.
+        """
+        self.video_size = QSize(FRAME_WIDTH, FRAME_HEIGHT, alignment = Qt.AlignCenter)
+        self.image_label = QLabel()
+        self.image_label.setFixedSize(self.video_size)
 
-        # Create the layout
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.video_frame)
-        layout.addWidget(self.stream_frame)
+        self.stream_label = QLabel()
+        self.stream_label.setFixedSize(self.video_size)
 
-        # Set the layout
-        self.setLayout(layout)
+        self.second_label = QLabel()
+        self.second_label.setFixedSize(self.video_size)
 
-        # Connect the signals and slots
+        self.third_label = QLabel()
+        self.third_label.setFixedSize(self.video_size)
+
+        self.display_frame_button = QPushButton("Display from Server")
+        self.display_frame_button.clicked.connect(self.start_stream_thread)
+
+        self.quit_button = QPushButton("Quit")
         self.quit_button.clicked.connect(self.close)
+        
+        ## Clear current layout
+        for i in reversed(range(self.layout.count())): 
+            self.layout.itemAt(i).widget().deleteLater()
 
-    def start_stream(self):
-        # Start the network stream
-        command = ['ffmpeg',
-                   '-f', 'rawvideo',
-                   '-pix_fmt', 'bgr24',
-                   '-s', f"{FRAME_WIDTH}x{FRAME_HEIGHT}",
-                   '-i', '-',
-                   '-pix_fmt', 'yuv420p',
-                   '-f', 'mpegts',
-                   f"udp://{SERVER_IP}:{SERVER_PORT}"]
-        self.stream = subprocess.Popen(command, stdin=subprocess.PIPE)
+        # self.layout.addWidget(self.image_label)
+        self.layout.addWidget(self.stream_label)
+        self.layout.addWidget(self.display_frame_button)
+        self.layout.addWidget(self.quit_button)
 
-        # Start the video stream loop
-        while True:
-            # Read a frame from the video capture object
-            ret, frame = self.capture.read()
-            if not ret:
-                break
+        self.setLayout(self.layout)
+        
 
-            # Display the video frame in the GUI
-            self.display_video_frame(frame)
+    def display_video_frame_using_opencv(self, label : QLabel, url : str):
+        opencv_video_stream = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
 
-            # Send the video frame to the network stream
-            self.send_video_frame(frame)
+        try:
+            while True:
+                try:
+                    # Read the input live stream
+                    ret, frame = opencv_video_stream.read()
+                    # print("Return type : ", type(ret), ". Return value : ", ret)
+                    # print("Frame type : ", type(frame), ". Frane value : ", frame)
+                    if self.close_called == True:
+                        print("Video Capture stopped : ", url)
+                        break
 
-        # Stop the network stream
-        self.stream.stdin.close()
-        self.stream.wait()
+                    if ret:
+                        frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
 
-    def display_video_frame(self, frame):
-        # Convert the frame from BGR to RGB
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        frame = cv2.flip(frame, 1)
 
-        # Create a QImage from the frame data
-        image = QtGui.QImage(frame.data, frame.shape[1], frame.shape[0],
-                             QtGui.QImage.Format_RGB888)
+                        # Create a QImage from the frame data
+                        # image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
+                        image = qimage2ndarray.array2qimage(frame)
+                        
+                        # Create a QPixmap from the QImage
+                        pixmap = QPixmap.fromImage(image)
 
-        # Create a QPixmap from the QImage
-        pixmap = QtGui.QPixmap.fromImage(image)
+                        # Set the pixmap in the stream frame label
+                        label.setPixmap(pixmap)
+                    else:
+                        print("No frame received in opencv stream")
 
-        # Set the pixmap in the video frame label
-        self.video_frame.setPixmap(pixmap)
+                except Exception as e:
+                    print("Failed : ", e)
+                
+        except Exception as e:
+            print("Exception in displaying : ", e)
+        finally:
+            opencv_video_stream.release()
 
-    def send_video_frame(self, frame):
-        # Write the frame to the network stream
-        self.stream.stdin.write(frame.tobytes())
-        self.stream.stdin.flush()
+    Slot()
+    def start_stream_thread(self):
+        self.setup_ui()
+        # self.layout.addWidget(self.stream_label)
+        # self.layout.addWidget(self.second_label)
+        # self.layout.addWidget(self.third_label)
 
-        # Receive the streamed frame from the server
-        recv_command = ['ffmpeg',
-                        '-i', f"udp://{SERVER_IP}:{SERVER_PORT}",
-                        '-pix_fmt', 'rgb24',
-                        '-f', 'rawvideo',
-                        '-']
-        recv_process = subprocess.Popen(recv_command, stdout=subprocess.PIPE)
-        while True:
-            # Read a frame from the network stream
-            frame_data = recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 3)
-            if not frame_data:
-                break
+        # thread_opencv_second = threading.Thread(target=self.display_video_frame_using_opencv, args=(self.stream_label, RTMP_URL))
+        # thread_opencv_second.start()
+        
+        self.receive_process_invoked = True
 
-            # Convert the frame data to a numpy array
-            frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
-            frame = frame.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
+        self.recv_process = subprocess.Popen(self.recv_command, stdout=subprocess.PIPE)
 
-            # Display the streamed frame in the GUI
-            self.display_stream_frame(frame)
+        thread_stream_audio = threading.Thread(target=self.stream_audio_play)
+        thread_stream_audio.start()
 
-    def display_stream_frame(self, frame):
-        # Convert the frame from BGR to RGB
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    def stream_audio_play(self):
+        print("Reading audio from server")
 
-        # Create a QImage from the frame data
-        image = QtGui.QImage(frame.data, frame.shape[1], frame.shape[0],
-                             QtGui.QImage.Format_RGB888)
+        self.p = pyaudio.PyAudio()
+        self.audio_stream = self.p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=44100,
+            output=True
+        )
 
-        # Create a QPixmap from the QImage
-        pixmap = QtGui.QPixmap.fromImage(image)
+        data = self.recv_process.stdout.read(FRAME_HEIGHT * FRAME_WIDTH * 2)
+        while(len(data)>0):
+            try:
+                # Play audio from stdout
+                if self.close_called == True:
+                    break
+                self.audio_stream.write(data)
+                data = self.recv_process.stdout.read(FRAME_HEIGHT * FRAME_WIDTH * 2)
+                # self.recv_process.stdout.flush()
+            except Exception as e:
+                print("Exception occured during audio receive : ", e)
+            finally:
+                if self.audio_stream != None:
+                    self.audio_stream.stop_stream()
+                    self.audio_stream.close()
+                if self.p != None:
+                    self.p.terminate()
+                self.recv_process.stdout.flush()
+                self.recv_process.terminate()
+                self.recv_process.wait()
+        
 
-        # Set the pixmap in the stream frame label
-        self.stream_frame.setPixmap(pixmap)
+if __name__ == "__main__":
+    app = QApplication([])
 
-if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-    window = VideoStream()
-    window.show()
-    app.exec_()
+    homepage = VideoConferencingHomePage()
+    homepage.resize(800, 600)
+    homepage.setAutoFillBackground(True)
+    palette = QPalette()
+    gradient = QLinearGradient(0, 0, 0, 400)
+    gradient.setColorAt(0.0, QColor('darkBlue'))
+    gradient.setColorAt(1.0, QColor('darkMagenta'))
+    palette.setBrush(QPalette.Window, QBrush(gradient))
+    homepage.setPalette(palette)
+    homepage.show()
 
+    sys.exit(app.exec())
+
+
+
+#Read a frame from the network stream
+# audio_video_data = self.recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 2)
+# print("Frame Data : " + audio_video_data.decode("utf-8"))
+
+# if len(audio_video_data) != FRAME_WIDTH * FRAME_HEIGHT * 3:
+#     print("Incorrect data received from server")
+
+# if 1 == 1:
+    # print("Received a frame from server")
+    # Convert the frame data to a numpy array
+    # frame = numpy.frombuffer(audio_video_data, dtype=numpy.uint8)
+    # frame = frame.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
+
+    # # Convert the frame from BGR to RGB
+    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # frame = cv2.flip(frame, 1)
+
+    # # Create a QImage from the frame data
+    # # image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
+    # image = qimage2ndarray.array2qimage(frame)
+    
+    # # Create a QPixmap from the QImage
+    # pixmap = QPixmap.fromImage(image)
+
+    # # Set the pixmap in the stream frame label
+    # self.stream_label.setPixmap(pixmap)
+
+    # self.recv_process.stdout.flush()
