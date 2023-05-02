@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QSizePolicy
 )
 from style import textbox_style, primary_cta_style, secondary_cta_style
-from api_requests import post
+from api_requests import sign_in
 
 
 class LoginPage(QWidget):
@@ -83,7 +83,7 @@ class LoginPage(QWidget):
         self.email = self.email_textbox.text().strip()
         self.password = self.password_textbox.text().strip()
         if self.email and self.password:
-            self.response = self.sign_in(self.email, self.password)
+            self.response = sign_in(self.email, self.password)
             # print(self.response['message'])
             self.data = self.response.json()
             if self.response.status_code == 200 and self.data['id'] == 0:
@@ -99,6 +99,3 @@ class LoginPage(QWidget):
         else:
             self.error_label.setText("Please Enter Email/Password.")      
 
-    def sign_in(self, email, password):
-        payload = {"email": email, "password": password}
-        return post("login", payload)

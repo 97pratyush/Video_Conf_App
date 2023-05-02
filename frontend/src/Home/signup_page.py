@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from style import textbox_style, primary_cta_style, secondary_cta_style
 from Dashboard.dashboard import Dashboard
-from api_requests import post
+from api_requests import sign_up
 
 
 class SignupPage(QWidget):
@@ -105,7 +105,7 @@ class SignupPage(QWidget):
         self.password = self.password_textbox.text().strip()
 
         if self.email and self.password and self.name:
-            self.response = self.sign_up(self.name, self.email, self.password)
+            self.response = sign_up(self.name, self.email, self.password)
             # print(self.response['message'])
             self.data = self.response.json()
             if self.response.status_code == 200 and self.data['userId']:                
@@ -120,10 +120,6 @@ class SignupPage(QWidget):
                 self.error_label.setText("Something went wrong.")
         else:
             self.error_label.setText("Please enter all details.")
-        
-    def sign_up(self, name, email, password):
-        payload = {"name": name, "email": email, "password": password}
-        return post("createUser", payload)
     
     def navigate_to_signin(self):
         # Get the index of the next page

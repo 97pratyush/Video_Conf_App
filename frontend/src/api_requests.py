@@ -11,10 +11,16 @@ def post(endpoint, payload):
     )
 
     if response.status_code == 200:
-        data = response
-        print(data.json())
+        print(response.json())
     else:
-        data = response
         print("Error:", response.status_code)
 
-    return data
+    return response
+
+def sign_in(email, password):
+    payload = {"email": email, "password": password}
+    return post("login", payload)
+
+def sign_up(name, email, password):
+    payload = {"name": name, "email": email, "password": password}
+    return post("createUser", payload)
