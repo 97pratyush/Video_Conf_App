@@ -5,3 +5,4 @@ ffmpeg-python>=0.2.0
 python-ffmpeg-video-streaming>=0.1
 requests==2.29.0
 ndg-httpsclient==0.5.1
+pyaudio==0.2.13
