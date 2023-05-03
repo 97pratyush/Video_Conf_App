@@ -25,29 +25,22 @@ class StartMeeting(QMainWindow):
         
         # Send and display own video
         self.send_video = SendandDisplayVideo(self.meeting_page.labels[0], self.meeting_id, self.user_id)
+        thread_ffmpeg_send = threading.Thread(target=self.send_video.send_video_using_opencv_pipe, daemon=True)
+        thread_ffmpeg_send.start()
 
-        # Send using ffmpeg wrapper
-        thread_send_stream = threading.Thread(target=self.send_video.send_stream_to_server, daemon=True)
-        # thread_send_stream.start()
-
-        # Send using manual subprocess
-        thread_send_stream_legacy = threading.Thread(target=self.send_video.send_stream_to_server_legacy, daemon=True)
-        thread_send_stream_legacy.start()
-
-
-    # Need to be called for each participant
     def receive_video_of_participant(self):
-        receive_stream = ReceiveStream()
-        thread_show_stream = threading.Thread(target=receive_stream.start_participant_stream, args=(self.meeting_page.labels[0], self.meeting_id, self.user_id), daemon=True)
-        thread_show_stream.start()
+        self.receive_video = ReceiveVideo()
+        thread_ffmpeg_send = threading.Thread(target=self.receive_video.receive_video_frames_using_ffmpeg, args=(self.meeting_page.labels[0], 'test', 'test'), daemon=True)
+        thread_ffmpeg_send.start()
 
     def end_call(self):
         try:
             end_meeting(self.user_id, self.meeting_id)
             self.close()
             print("Ending call and closing streams")
-
             # Stop sending and displaying own video
-            self.send_video.stop_stream_legacy() # Or self.send_video.stop_stream()
+            self.send_video.stop_sending_video_opencv()
+            # Stop receiving process of each participant
+            # self.receive_video.stop_receiving_frames()
         except:
             self.close()
