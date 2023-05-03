@@ -2,8 +2,8 @@ from PySide6.QtCore import Qt, QSize
 from Meeting.meeting import MeetingPage
 from PySide6.QtWidgets import QMainWindow
 from api_requests import end_meeting
-from Streaming.SendandDisplayVideo import SendandDisplayVideo
-from Streaming.ReceiveVideo import ReceiveVideo
+from Streaming.send_and_display_video import SendandDisplayVideo
+from Streaming.receive_video import ReceiveVideo
 import threading, constant as const
 
 class StartMeeting(QMainWindow):
@@ -30,7 +30,7 @@ class StartMeeting(QMainWindow):
 
     def receive_video_of_participant(self):
         self.receive_video = ReceiveVideo()
-        thread_ffmpeg_send = threading.Thread(target=self.receive_video.receive_video_frames_using_ffmpeg, args=(self.meeting_page.labels[0], 'test', 'test'), daemon=True)
+        thread_ffmpeg_send = threading.Thread(target=self.receive_video.receive_video_frames_using_ffmpeg, args=(self.meeting_page.labels[0], 'meeting_id', 'user_id'), daemon=True)
         thread_ffmpeg_send.start()
 
     def end_call(self):
