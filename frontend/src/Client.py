@@ -3,35 +3,26 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from PySide6.QtMultimedia import *
 from PySide6.QtMultimediaWidgets import *
-from PySide6.QtNetwork import *
-import sys, cv2, qimage2ndarray, numpy, subprocess, threading, pyaudio
+import constant as const
+import sys, cv2, qimage2ndarray, numpy, subprocess, threading, pyaudio, vlc, time
 
-# Define the dimensions of the video frames
-FRAME_WIDTH = 320
-FRAME_HEIGHT = 240
-
-# Define the IP address and port number of the server
-SERVER_IP = '10.0.0.248'
-SERVER_PORT = 4000
-
-# Video Codec
-VIDEO_CODEC = 'flv'
-
-RTMP_URL = 'rtmp://10.0.0.248/live/test_test'
+MEETING_ID = 'test'
+USER_ID = 'test'
 
 class VideoConferencingHomePage(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.send_command = ['ffmpeg', 
-                    # '-f', 'rawvideo', 
+        self.send_default_audio_video_command = ['ffmpeg', 
                     '-f', 'v4l2',
-                    '-s', f'{FRAME_WIDTH}x{FRAME_HEIGHT}', 
+                    '-s', f'{const.FRAME_WIDTH}x{const.FRAME_HEIGHT}', 
+                    '-thread_queue_size', '1024',
                     '-i', '/dev/video0',
                     '-f', 'alsa',
+                    '-thread_queue_size', '1024',
                     '-i', 'default',
                     '-c:v', 'libx264',
-                    '-preset', 'veryfast',
+                    '-preset', 'ultrafast',
                     '-tune', 'zerolatency',
                     '-b:v', '100k',
                     '-c:a', 'aac', 
@@ -40,31 +31,23 @@ class VideoConferencingHomePage(QWidget):
                     '-af', 'afftdn',
                     '-maxrate', '3000k',
                     '-bufsize', '300k',
-                    '-f', f'{VIDEO_CODEC}',
-                    f'{RTMP_URL}'
+                    '-f', f'{const.VIDEO_CODEC}',
+                    f'{const.RTMP_URL}/{MEETING_ID}_{USER_ID}'
         ]
+        self.stream = subprocess.Popen(self.send_default_audio_video_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        self.stream = subprocess.Popen(self.send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        # self.recv_command = ['ffmpeg',
-        #            '-i', f'{RTMP_URL}',
-        #            '-f', 'rawvideo',
-        #         #    '-fflags', 'nobuffer',
-        #            '-pix_fmt', 'bgr24',
-        #         #    '-bufsize', '100k',
-        #            '-'
-        # ]
-
-        self.recv_command = [
-                    'ffmpeg',
-                    '-vn',
-                    '-i', f'{RTMP_URL}',
-                    '-f', 'adts',
-                    '-'
-                ]
+        #Audio only command
+        # self.recv_command = [
+        #             'ffmpeg',
+        #             '-re',
+        #             '-i', f'{RTMP_URL}',
+        #             '-vn',
+        #             '-f', 'adts',
+        #             '-'
+        #         ]
 
         # self.stream = None
-        self.recv_process = None
+        self.receive_video_from_server_process = None
         self.close_called = False
         self.receive_process_invoked = False
         self.capture = None
@@ -88,14 +71,13 @@ class VideoConferencingHomePage(QWidget):
 
         if self.stream != None:
             self.stream.terminate() 
-            self.stream.wait()
 
         if self.capture != None:
             self.capture.release()
 
-        if self.receive_process_invoked == True and self.recv_process != None:
-            self.recv_process.terminate()
-            self.recv_process.wait()
+        if self.receive_process_invoked == True and self.receive_video_from_server_process != None:
+            self.receive_video_from_server_process.stdout.close()
+            self.receive_video_from_server_process.terminate()
 
         if self.audio_stream != None:
             self.audio_stream.stop_stream()
@@ -114,7 +96,7 @@ class VideoConferencingHomePage(QWidget):
     def setup_ui(self):
         """Initialize widgets.
         """
-        self.video_size = QSize(FRAME_WIDTH, FRAME_HEIGHT, alignment = Qt.AlignCenter)
+        self.video_size = QSize(const.FRAME_WIDTH, const.FRAME_HEIGHT, alignment = Qt.AlignCenter)
         self.image_label = QLabel()
         self.image_label.setFixedSize(self.video_size)
 
@@ -137,7 +119,7 @@ class VideoConferencingHomePage(QWidget):
         for i in reversed(range(self.layout.count())): 
             self.layout.itemAt(i).widget().deleteLater()
 
-        # self.layout.addWidget(self.image_label)
+        self.layout.addWidget(self.image_label)
         self.layout.addWidget(self.stream_label)
         self.layout.addWidget(self.display_frame_button)
         self.layout.addWidget(self.quit_button)
@@ -145,8 +127,14 @@ class VideoConferencingHomePage(QWidget):
         self.setLayout(self.layout)
         
 
-    def display_video_frame_using_opencv(self, label : QLabel, url : str):
+    def display_video_frame_using_opencv(self, label : QLabel, meeting_id : str, user_id : str):
+        # URL in the form of rtmp://server/meeting_user
+        url = f'{const.RTMP_URL}/{meeting_id}_{user_id}'
+
         opencv_video_stream = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
+
+        start_time = time.time()
+        self.frame_received = False
 
         try:
             while True:
@@ -160,7 +148,8 @@ class VideoConferencingHomePage(QWidget):
                         break
 
                     if ret:
-                        frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
+                        self.frame_received = True
+                        frame = cv2.resize(frame, (const.FRAME_WIDTH, const.FRAME_HEIGHT))
 
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         frame = cv2.flip(frame, 1)
@@ -175,7 +164,9 @@ class VideoConferencingHomePage(QWidget):
                         # Set the pixmap in the stream frame label
                         label.setPixmap(pixmap)
                     else:
-                        print("No frame received in opencv stream")
+                        if ((time.time() - start_time) >= const.MAX_WAIT_TIME_FOR_SERVER and self.frame_received == False): # Wait a maximum of wait time defined
+                            print("No frame receieved even after", const.MAX_WAIT_TIME_FOR_SERVER, "seconds.")
+                            return
 
                 except Exception as e:
                     print("Failed : ", e)
@@ -185,22 +176,110 @@ class VideoConferencingHomePage(QWidget):
         finally:
             opencv_video_stream.release()
 
+    def display_video_frame_using_ffmpeg_subprocess(self, image_label : QLabel, meeting_id : str, user_id : str):
+        
+        url = f'{const.RTMP_URL}/{meeting_id}_{user_id}'
+        self.receive_video_from_server_command = ['ffmpeg',
+                #    '-fflags', 'nobuffer',
+                   '-an',
+                   '-i', f'{url}',
+                   '-f', 'rawvideo',
+                   '-pix_fmt', 'bgr24',
+                   '-bufsize', '300k',
+                   '-'
+        ]
+
+        # Start process first
+        self.receive_video_from_server_process = subprocess.Popen(self.receive_video_from_server_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=10**8)
+        self.receive_process_invoked = True
+        self.frame_received = False
+
+        start_time = time.time()
+
+        try: 
+            while(True):
+                if self.close_called == True:
+                    print("Video receiving stopped : ", url)
+                    break
+                
+                # Wait until frame is received or maximum of 10 seconds
+                if ((time.time() - start_time) >= const.MAX_WAIT_TIME_FOR_SERVER and self.frame_received == False): # Wait a maximum of wait time defined
+                    print("No frame receieved even after", const.MAX_WAIT_TIME_FOR_SERVER, "seconds.")
+                    return
+                
+                frame_data = self.receive_video_from_server_process.stdout.read(const.FRAME_WIDTH * const.FRAME_HEIGHT * 3)
+
+                if frame_data:
+                    self.frame_received = True
+                    # Convert the frame data to a numpy array
+                    frame = numpy.frombuffer(frame_data, dtype=numpy.uint8)
+                    frame = frame.reshape((const.FRAME_HEIGHT, const.FRAME_WIDTH, 3))
+                    # Convert the frame from BGR to RGB
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame = cv2.flip(frame, 1)
+                    # Create a QImage from the frame data
+                    image = qimage2ndarray.array2qimage(frame)
+                    # Create a QPixmap from the QImage
+                    pixmap = QPixmap.fromImage(image)
+                    # Set the pixmap in the stream frame label
+                    image_label.setPixmap(pixmap)
+                    self.receive_video_from_server_process.stdout.flush()
+                else:
+                    self.receive_video_from_server_process.stdout.flush()
+                    time.sleep(0.1)
+                    continue
+
+        except Exception as e:
+            print("Exception occured while receiving frames : ", e)
+        finally:
+            print("Closing Receive stream")
+            if self.receive_video_from_server_process != None:
+                if self.receive_video_from_server_process.stdout:
+                    self.receive_video_from_server_process.stdout.close()
+                self.receive_video_from_server_process.terminate()
+
     Slot()
     def start_stream_thread(self):
+        """
+            Mark this as true to close necessary operations when program ends.
+        """
+        self.receive_process_invoked = True
         self.setup_ui()
-        # self.layout.addWidget(self.stream_label)
-        # self.layout.addWidget(self.second_label)
-        # self.layout.addWidget(self.third_label)
 
-        thread_opencv_second = threading.Thread(target=self.display_video_frame_using_opencv, args=(self.stream_label, RTMP_URL))
-        thread_opencv_second.start()
+        """ 
+            Display frame directly using OpenCV. 
+            Call this after ffmpeg starts sending frames from the client, calling it before any data is published on rtmp will lead to failure.
+        """
+        thread_opencv_display = threading.Thread(target=self.display_video_frame_using_opencv, args=(self.image_label, 'test', 'test'))
+        thread_opencv_display.start()
+
+        """
+            Display frame by capturing piped output.
+            Can be initiated anytime.
+        """
+        #Display it in a new thread
+        # thread_ffmpeg_display = threading.Thread(target=self.display_video_frame_using_ffmpeg_subprocess, args=(self.image_label, 'test', 'test'), daemon=True)
+        # thread_ffmpeg_display.start()
         
-        # self.receive_process_invoked = True
 
-        # self.recv_process = subprocess.Popen(self.recv_command, stdout=subprocess.PIPE)
-
+        """Audio tests"""
         # thread_stream_audio = threading.Thread(target=self.stream_audio_play)
         # thread_stream_audio.start()
+
+        """Works but a lot of delay"""
+        # thread_stream_audio = threading.Thread(target=self.test_play)
+        # thread_stream_audio.start()
+
+    def thread_finished(self):
+        print("Thread closed")
+
+    def test_play(self):
+        vlc_instance = vlc.Instance()
+        media_player = vlc_instance.media_player_new()
+        Media = vlc_instance.media_new(const.RTMP_URL)
+        Media.get_mrl()
+        media_player.set_media(Media)
+        media_player.play()
 
     def stream_audio_play(self):
         print("Reading audio from server")
@@ -210,31 +289,30 @@ class VideoConferencingHomePage(QWidget):
             format=pyaudio.paInt16,
             channels=1,
             rate=44100,
-            output=True
+            output=True,
+            frames_per_buffer=1024
         )
-
-        data = self.recv_process.stdout.read(FRAME_HEIGHT * FRAME_WIDTH * 2)
-        while(len(data)>0):
+        
+        while(True):
             try:
                 # Play audio from stdout
                 if self.close_called == True:
                     break
+                data = self.receive_video_from_server_process.stdout.read(const.FRAME_HEIGHT * const.FRAME_WIDTH * 2)
                 self.audio_stream.write(data)
-                data = self.recv_process.stdout.read(FRAME_HEIGHT * FRAME_WIDTH * 2)
-                # self.recv_process.stdout.flush()
             except Exception as e:
-                print("Exception occured during audio receive : ", e)
+                # print("Exception occured during audio receive : ", e)
+                continue
             finally:
                 if self.audio_stream != None:
                     self.audio_stream.stop_stream()
                     self.audio_stream.close()
                 if self.p != None:
                     self.p.terminate()
-                self.recv_process.stdout.flush()
-                self.recv_process.terminate()
-                self.recv_process.wait()
+                self.receive_video_from_server_process.stdout.flush()
+                self.receive_video_from_server_process.terminate()
+                self.receive_video_from_server_process.wait()
         
-
 if __name__ == "__main__":
     app = QApplication([])
 
@@ -250,34 +328,3 @@ if __name__ == "__main__":
     homepage.show()
 
     sys.exit(app.exec())
-
-
-
-#Read a frame from the network stream
-# audio_video_data = self.recv_process.stdout.read(FRAME_WIDTH * FRAME_HEIGHT * 2)
-# print("Frame Data : " + audio_video_data.decode("utf-8"))
-
-# if len(audio_video_data) != FRAME_WIDTH * FRAME_HEIGHT * 3:
-#     print("Incorrect data received from server")
-
-# if 1 == 1:
-    # print("Received a frame from server")
-    # Convert the frame data to a numpy array
-    # frame = numpy.frombuffer(audio_video_data, dtype=numpy.uint8)
-    # frame = frame.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
-
-    # # Convert the frame from BGR to RGB
-    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    # frame = cv2.flip(frame, 1)
-
-    # # Create a QImage from the frame data
-    # # image = QImage(frame.data, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
-    # image = qimage2ndarray.array2qimage(frame)
-    
-    # # Create a QPixmap from the QImage
-    # pixmap = QPixmap.fromImage(image)
-
-    # # Set the pixmap in the stream frame label
-    # self.stream_label.setPixmap(pixmap)
-
-    # self.recv_process.stdout.flush()
