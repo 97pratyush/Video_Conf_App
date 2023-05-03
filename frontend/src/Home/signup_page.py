@@ -6,18 +6,17 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from style import textbox_style, primary_cta_style, secondary_cta_style
-from Dashboard.dashboard import Dashboard
+from Dashboard.dashboard import DashboardPage
 from api_requests import sign_up
 
-
 class SignupPage(QWidget):
+    goto_dashboard_signal = Signal(QWidget)
     def __init__(self, parent=None):
         super(SignupPage, self).__init__(parent)
 
         self.layout = QVBoxLayout()
-
         self.title = QLabel(
             "<font size=40 color=#3477eb>Cloud Meetings</font>",
             alignment=Qt.AlignCenter,
@@ -110,11 +109,15 @@ class SignupPage(QWidget):
             self.data = self.response.json()
             if self.response.status_code == 200 and self.data['userId']:                
                 self.user_id = self.data['userId']
-                # Get the index of the next page
-                index = self.parent().currentIndex() + 1
-                # Show the next page
-                self.parent().setCurrentIndex(index)
-            elif self.response.status_code == 200:
+
+                dashboard = DashboardPage(self.user_id, "Siddharth Sircar")
+                self.goto_dashboard_signal.emit(dashboard)
+
+                # # Get the index of the next page
+                # index = self.parent().currentIndex() + 1
+                # # Show the next page
+                # self.parent().setCurrentIndex(index)
+            elif self.response.status_code == 403:
                 self.error_label.setText("This email already exists. Try login.")
             else:
                 self.error_label.setText("Something went wrong.")

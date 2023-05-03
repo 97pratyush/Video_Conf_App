@@ -63,3 +63,19 @@ secondary_cta_style = (
     "border-color : black;"
     "}"
 )
+
+end_meeting_cta_style = (
+    "QPushButton"
+    "{"
+    "background-color : red;"
+    "color : white;"
+    "width: 70px;"
+    "font-weight : bold;"
+    "margin-top : 10px;"
+    "margin-bottom : 0px;"
+    "margin-left : 100px;"
+    "margin-right : 100px;"
+    "padding: 10px;"
+    "border-radius : 5px;"
+    "}"
+)

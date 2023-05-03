@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -9,9 +9,10 @@ from PySide6.QtWidgets import (
 )
 from style import textbox_style, primary_cta_style, secondary_cta_style
 from api_requests import sign_in
-
+from Dashboard.dashboard import DashboardPage
 
 class LoginPage(QWidget):
+    goto_dashboard_signal = Signal(QWidget)
     def __init__(self):
         super().__init__()
 
@@ -86,16 +87,19 @@ class LoginPage(QWidget):
             self.response = sign_in(self.email, self.password)
             # print(self.response['message'])
             self.data = self.response.json()
-            if self.response.status_code == 200 and self.data['id'] == 0:
-                self.error_label.setText("Invalid Credentials.")
+            if self.response.status_code == 401:
+                self.error_label.setText("Your login attempt has failed. Make sure the email and password are correct.")
             elif self.response.status_code == 200:
                 self.user_id = self.data['id']
-                # Get the index of the next page
-                index = self.parent().currentIndex() + 2
-                # Show the next page
-                self.parent().setCurrentIndex(index)
+
+                dashboard = DashboardPage(self.user_id, "Siddharth Sircar")
+                self.goto_dashboard_signal.emit(dashboard)
+                # # Get the index of the next page
+                # index = self.parent().currentIndex() + 2
+                # # Show the next page
+                # self.parent().setCurrentIndex(index)
             else:
                 self.error_label.setText("Something went wrong.")
         else:
-            self.error_label.setText("Please Enter Email/Password.")      
+            self.error_label.setText("Please enter Email/Password.")      
 

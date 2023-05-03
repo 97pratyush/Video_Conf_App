@@ -7,12 +7,12 @@ from PySide6.QtWidgets import (
     QPushButton,
     QGridLayout,
     QLabel,
-    QListWidgetItem,
+    QSizePolicy
 )
-from style import primary_cta_style
+from PySide6.QtCore import Qt
+from style import end_meeting_cta_style
 
-
-class MeetingPage(QMainWindow):
+class MeetingPage(QWidget):
     def __init__(self, parent=None):
         super(MeetingPage, self).__init__(parent)
 
@@ -22,26 +22,24 @@ class MeetingPage(QMainWindow):
         self.meeting_layout = QHBoxLayout()
         self.video_layout = QGridLayout()
 
-        # self.video_label1 = QLabel("Video Tile 1")
-        # self.video_label2 = QLabel("Video Tile 2")
-        # self.video_label3 = QLabel("Video Tile 3")
-        # self.video_label4 = QLabel("Video Tile 4")
         self.labels = []
 
         # Create 4 Labels and add them to a list
-        for i in range(2):
-            label = QLabel(f"Attendee {str(i + 1)}")
+        for i in range(1):
+            label = QLabel(f"Attendee {str(i + 1)}", alignment=Qt.AlignCenter)
             label.setStyleSheet(
                 "QLabel"
                 "{"
+                "color : white;"
                 "font-weight : bold;"
                 'font-family : "Georgia", monospace;'
                 "font-style : italic;"
                 "border-style: solid;"
                 "border-width : 1px;"
-                "border-color : black;"
+                "border-color : white;"
                 "}"
             )
+            label.setFixedSize(640, 480)
             self.labels.append(label)
 
         # Video Container: Grid layout of video tiles
@@ -55,24 +53,13 @@ class MeetingPage(QMainWindow):
                 col = 0
                 row += 1
 
-        # self.video_layout.addWidget(self.video_label1)
-        # self.video_layout.addWidget(self.video_label2)
-        # self.video_layout.addWidget(self.video_label3)
-        # self.video_layout.addWidget(self.video_label4)
 
         self.video_container = QWidget()
         self.video_container.setLayout(self.video_layout)
-        # self.video_container.setFixedSize(400, 300)
-
-        # self.attendee_labe1 = QLabel("Attendee 1")
-        # self.attendee_labe2 = QLabel("Attendee 2")
-        # newItem = QListWidgetItem()
-        # newItem.setText("Attendee 1")
 
         self.attendees_list = QListWidget()
         self.attendees_list.addItem("Attendee 1")
         self.attendees_list.addItem("Attendee 2")
-        self.attendees_list.setFixedSize(100, self.height())
 
         # Meeting Container: HLayout with Video Container and Attendees List
         self.meeting_layout.addWidget(self.video_container)
@@ -81,17 +68,16 @@ class MeetingPage(QMainWindow):
         self.meeting_container = QWidget()
         self.meeting_container.setLayout(self.meeting_layout)
 
-        self.end_call_button = QPushButton("End Call")
-        self.end_call_button.setStyleSheet(primary_cta_style)
-        # self.end_call_button.clicked.connect(self.end_call)
+        self.end_call_button = QPushButton("End Meeting")
+        self.end_call_button.setFixedSize(100, 50)
+        # SizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.end_call_button.setStyleSheet(end_meeting_cta_style)
+
         # VBoxLayout: HBoxLayout Widget + End call button
         self.parent_layout.addWidget(self.meeting_container)
         self.parent_layout.addWidget(self.end_call_button)
 
-        self.parent_container = QWidget()
-        self.parent_container.setLayout(self.parent_layout)
+        # self.parent_container = QWidget()
+        self.setLayout(self.parent_layout)
 
-        self.setCentralWidget(self.parent_container)
-        self.resize(700, 500)
-        self.setAutoFillBackground(True)
-        self.setStyleSheet("QMainWindow" "{" "background : white;" "}")
+        # self.setCentralWidget(self.parent_container)        
