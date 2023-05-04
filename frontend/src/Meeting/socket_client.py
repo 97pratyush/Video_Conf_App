@@ -4,7 +4,7 @@ import threading
 import json
 
 # Define the address and port to use for the socket connection
-WS_URL = "ws://localhost:1234/"
+WS_URL = "ws://8.tcp.ngrok.io:13013"
 
 # Define a global variable to hold the socket object
 ws = None
