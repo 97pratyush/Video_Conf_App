@@ -3,8 +3,12 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 from PySide6.QtMultimedia import *
 from PySide6.QtMultimediaWidgets import *
+from Test import VideoThread, AudioStream
+from Streaming.send_and_display_video import SendandDisplayVideo
+from Streaming.receive_stream import ReceiveStream
 import constant as const
-import sys, cv2, qimage2ndarray, numpy, subprocess, threading, time
+import sys, cv2, qimage2ndarray, numpy, subprocess, threading, pyaudio, vlc, time
+from ffpyplayer.player import MediaPlayer
 
 MEETING_ID = 'test'
 USER_ID = 'test'
@@ -13,27 +17,27 @@ class VideoConferencingHomePage(QWidget):
     def __init__(self):
         super().__init__()
 
-        # self.send_default_audio_video_command = ['ffmpeg', 
-        #             '-f', 'v4l2',
-        #             '-s', f'{const.FRAME_WIDTH}x{const.FRAME_HEIGHT}', 
-        #             '-thread_queue_size', '1024',
-        #             '-i', '/dev/video0',
-        #             '-f', 'alsa',
-        #             '-thread_queue_size', '1024',
-        #             '-i', 'default',
-        #             '-c:v', 'libx264',
-        #             '-preset', 'ultrafast',
-        #             '-tune', 'zerolatency',
-        #             '-b:v', '100k',
-        #             '-c:a', 'aac', 
-        #             '-ar', '44100',
-        #             '-ac', '1',
-        #             '-af', 'afftdn',
-        #             '-maxrate', '3000k',
-        #             '-bufsize', '300k',
-        #             '-f', f'{const.VIDEO_CODEC}',
-        #             f'{const.RTMP_URL}/{MEETING_ID}_{USER_ID}'
-        # ]
+        self.send_default_audio_video_command = ['ffmpeg', 
+                    '-f', 'v4l2',
+                    '-s', f'{const.FRAME_WIDTH}x{const.FRAME_HEIGHT}', 
+                    '-thread_queue_size', '1024',
+                    '-i', '/dev/video0',
+                    '-f', 'alsa',
+                    '-thread_queue_size', '1024',
+                    '-i', 'default',
+                    '-c:v', 'libx264',
+                    '-preset', 'ultrafast',
+                    '-tune', 'zerolatency',
+                    '-b:v', '100k',
+                    '-c:a', 'aac', 
+                    '-ar', '44100',
+                    '-ac', '1',
+                    '-af', 'afftdn',
+                    '-maxrate', '3000k',
+                    '-bufsize', '300k',
+                    '-f', f'{const.VIDEO_CODEC}',
+                    f'{const.RTMP_URL}/{MEETING_ID}_{USER_ID}'
+        ]
         # self.stream = subprocess.Popen(self.send_default_audio_video_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
         #Audio only command
@@ -52,6 +56,7 @@ class VideoConferencingHomePage(QWidget):
         self.receive_process_invoked = False
         self.capture = None
         self.audio_stream = None
+        self.send_video = None
 
         # self.title = QLabel("<font color=#fc1803 size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
         # self.send_video_to_server_button = QPushButton("Send Video to Server")
@@ -69,8 +74,8 @@ class VideoConferencingHomePage(QWidget):
 
         self.close_called = True
 
-        if self.stream != None:
-            self.stream.terminate() 
+        # if self.stream != None:
+        #     self.stream.terminate() 
 
         if self.capture != None:
             self.capture.release()
@@ -84,12 +89,16 @@ class VideoConferencingHomePage(QWidget):
             self.audio_stream.close()
             self.p.terminate()
 
+        if self.send_video:
+            self.send_video.stop_stream()
+
         super().closeEvent(event)
 
     # OpenCV Implementation
     Slot()
     def send_video_to_server(self):
         self.setup_ui()
+        self.test_stream()
         # thread_opencv = threading.Thread(target=self.display_video_frame_using_opencv, args=(self.image_label, RTMP_URL))
         # thread_opencv.start()
     
@@ -125,7 +134,38 @@ class VideoConferencingHomePage(QWidget):
         self.layout.addWidget(self.quit_button)
 
         self.setLayout(self.layout)
+
+    def test_stream(self):
         
+        # Send and display Video 
+        self.send_video = SendandDisplayVideo(self.image_label, 'test', 'test')
+
+        # Send using manual subprocess
+        thread_ffmpeg_send = threading.Thread(target=self.send_video.send_stream_to_server_legacy, daemon=True)
+        thread_ffmpeg_send.start()
+        
+        thread_send_stream = threading.Thread(target=self.send_video.send_stream_to_server, daemon=True)
+        # thread_send_stream.start()
+
+        # global player
+        # player = MediaPlayer(url)
+        receive_stream = ReceiveStream()
+        thread_show_stream = threading.Thread(target=receive_stream.start_participant_stream, args=(self.stream_label, 'test', 'test'), daemon=True)
+        thread_show_stream.start()
+
+        # print("HEHEHEH")
+        # self.test_audio()
+
+        def handle_quit():
+            print()
+
+        app.aboutToQuit.connect(handle_quit)
+
+
+    def test_audio(self):
+        global player, player2
+        player = MediaPlayer('rtmp://10.0.0.248/live/stream1')
+        player2 = MediaPlayer('rtmp://10.0.0.248/live/stream')
 
     def display_video_frame_using_opencv(self, label : QLabel, meeting_id : str, user_id : str):
         # URL in the form of rtmp://server/meeting_user
