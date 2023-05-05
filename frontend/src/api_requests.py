@@ -1,7 +1,7 @@
 import requests
 import json
 
-url = "https://31c9-2601-646-9d01-1da0-306f-58d9-970e-e48.ngrok-free.app"
+url = "https://588b-2601-646-9d01-1da0-494b-1db0-121-2bc0.ngrok-free.app"
 
 def post(endpoint, payload):
     headers = {"Content-Type": "application/json"}
