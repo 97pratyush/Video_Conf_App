@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>Icons/chat-4-multi-size.ico</file>
+    <file>Icons/conference-multi-size.ico</file>
+  </qresource>
+</RCC>
