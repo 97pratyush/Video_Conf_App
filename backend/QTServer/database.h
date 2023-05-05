@@ -5,7 +5,7 @@
 #include <QJsonObject>
 
 void setupDatabase();
-int findUserDetails(QString& email, QString& password);
+QStringList findUserDetails(QString& email, QString& password);
 QString createUser(QString email, QString password, QString name);
 QString createMeeting(int hostId);
 QString addParticipantToMeeting(int userId, QString& participants, int meetingId);

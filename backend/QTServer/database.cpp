@@ -16,25 +16,26 @@ void setupDatabase(){
     }
 }
 
-int findUserDetails(QString& email, QString& password){
+QStringList findUserDetails(QString& email, QString& password){
     QSqlQuery* query = new QSqlQuery(*db);
+    QStringList queryResult;
     query->setForwardOnly(true);
-    if( !query->prepare(QString("SELECT id from public.user where email = ? and password = ?")) )
+    if( !query->prepare(QString("SELECT id, name from public.user where email = ? and password = ?")) )
     {
         qDebug() <<"Error = " << db->lastError().text();
-        return 0;
+        return queryResult;
     }
     else{
         query->addBindValue(email);
         query->addBindValue(password);
     }
-    QStringList queryResult = qSQLDbHelper->selectQuery(query, 1);
+    queryResult = qSQLDbHelper->selectQuery(query, 2);
     if(queryResult.isEmpty()){
         qDebug() << "Invalid Creds";
-        return 0;
+        return queryResult;
     }
     qDebug() << "Result" << queryResult[0] << "\n";
-    return queryResult[0].toInt();
+    return queryResult;
 }
 
 QString createUser(QString email, QString password, QString name){
