@@ -13,13 +13,13 @@ class SendandDisplayVideo():
 
     def send_stream_to_server(self):
         try:
-            capture = cv2.VideoCapture(cv2.CAP_V4L2) # 0 means default camera at 0 index
+            capture = cv2.VideoCapture(cv2.CAP_V4L2) # cv2.CAP_V4L2 = 0. Default cam at 0 index for Linux. Need to set different values for each OS
             capture.set(cv2.CAP_PROP_FRAME_WIDTH, const.FRAME_WIDTH)
             capture.set(cv2.CAP_PROP_FRAME_HEIGHT, const.FRAME_HEIGHT)
 
             video_input = ffmpeg.input('pipe:', format='rawvideo', pix_fmt='bgr24', s=f'{const.FRAME_WIDTH}x{const.FRAME_HEIGHT}', thread_queue_size='1024')
             audio_input = ffmpeg.input('default', format='alsa', channels='1', ar='44100', thread_queue_size='1024')
-            ouput = ffmpeg.output(video_input, audio_input, self.url, vcodec='libx264', acodec='aac', format='flv')
+            ouput = ffmpeg.output(video_input, audio_input, self.url, vcodec='libx264', acodec='aac', bufsize='500k', preset='veryfast', maxrate='3000k', tune='zerolatency', af='afftdn', format=f'{const.VIDEO_CODEC}')
             self.process = ouput.run_async(pipe_stdin=True)
 
             start_time = time.time()
@@ -33,10 +33,9 @@ class SendandDisplayVideo():
                 if ret:
                     #Display frame on Meeting Page
                     self.display_video_frame(frame)
-                    # Write to open pipe in send command
-                    self.process.stdin.write(frame.tobytes())
 
-                    # Flush buffer data after it's sent
+                    # Write to open pipe in send command and flush buffer after it's sent
+                    self.process.stdin.write(frame.tobytes())
                     self.process.stdin.flush()
                 else:
                     tries += 1
@@ -60,6 +59,9 @@ class SendandDisplayVideo():
 
     def stop_stream(self):
         if self.process:
+            if self.process.stdin:
+                self.process.stdin.flush()
+                self.process.stdin.close()
             self.process.terminate()
 
     def send_stream_to_server_legacy(self):
@@ -125,6 +127,7 @@ class SendandDisplayVideo():
             if capture:
                 capture.release()
             if self.send_process_opencv.stdin:
+                self.send_process_opencv.stdin.flush()
                 self.send_process_opencv.stdin.close()
             self.send_process_opencv.terminate()
 
