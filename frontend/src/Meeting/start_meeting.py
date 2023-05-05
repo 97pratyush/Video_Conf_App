@@ -3,7 +3,7 @@ from Meeting.meeting import MeetingPage
 from PySide6.QtWidgets import QMainWindow
 from api_requests import end_meeting
 from Streaming.send_and_display_video import SendandDisplayVideo
-from Streaming.receive_video import ReceiveVideo
+from Streaming.receive_stream import ReceiveStream
 import threading, constant as const
 
 class StartMeeting(QMainWindow):
@@ -25,22 +25,29 @@ class StartMeeting(QMainWindow):
         
         # Send and display own video
         self.send_video = SendandDisplayVideo(self.meeting_page.labels[0], self.meeting_id, self.user_id)
-        thread_ffmpeg_send = threading.Thread(target=self.send_video.send_video_using_opencv_pipe, daemon=True)
-        thread_ffmpeg_send.start()
 
+        # Send using ffmpeg wrapper
+        thread_send_stream = threading.Thread(target=self.send_video.send_stream_to_server, daemon=True)
+        # thread_send_stream.start()
+
+        # Send using manual subprocess
+        thread_send_stream_legacy = threading.Thread(target=self.send_video.send_stream_to_server_legacy, daemon=True)
+        thread_send_stream_legacy.start()
+
+
+    # Need to be called for each participant
     def receive_video_of_participant(self):
-        self.receive_video = ReceiveVideo()
-        thread_ffmpeg_send = threading.Thread(target=self.receive_video.receive_video_frames_using_ffmpeg, args=(self.meeting_page.labels[0], 'meeting_id', 'user_id'), daemon=True)
-        thread_ffmpeg_send.start()
+        receive_stream = ReceiveStream()
+        thread_show_stream = threading.Thread(target=receive_stream.start_participant_stream, args=(self.meeting_page.labels[0], self.meeting_id, self.user_id), daemon=True)
+        thread_show_stream.start()
 
     def end_call(self):
         try:
             end_meeting(self.user_id, self.meeting_id)
             self.close()
             print("Ending call and closing streams")
+
             # Stop sending and displaying own video
-            self.send_video.stop_sending_video_opencv()
-            # Stop receiving process of each participant
-            # self.receive_video.stop_receiving_frames()
+            self.send_video.stop_stream_legacy() # Or self.send_video.stop_stream()
         except:
             self.close()
