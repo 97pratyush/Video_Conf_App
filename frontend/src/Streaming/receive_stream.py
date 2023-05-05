@@ -1,10 +1,7 @@
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel
-from pydub import AudioSegment
-from pydub.playback import play
-from io import BytesIO
 from ffpyplayer.player import MediaPlayer
-import cv2, qimage2ndarray, numpy, subprocess, time, ffmpeg, constant as const
+import cv2, qimage2ndarray, numpy, time, constant as const
 
 class ReceiveStream():
     def start_participant_stream(self, user_video_tile : QLabel, meeting_id : str, user_id : str):
