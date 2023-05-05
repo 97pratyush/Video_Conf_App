@@ -4,7 +4,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtMultimedia import *
 from PySide6.QtMultimediaWidgets import *
 import constant as const
-import sys, cv2, qimage2ndarray, numpy, subprocess, threading, pyaudio, vlc, time
+import sys, cv2, qimage2ndarray, numpy, subprocess, threading, time
 
 MEETING_ID = 'test'
 USER_ID = 'test'
@@ -13,28 +13,28 @@ class VideoConferencingHomePage(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.send_default_audio_video_command = ['ffmpeg', 
-                    '-f', 'v4l2',
-                    '-s', f'{const.FRAME_WIDTH}x{const.FRAME_HEIGHT}', 
-                    '-thread_queue_size', '1024',
-                    '-i', '/dev/video0',
-                    '-f', 'alsa',
-                    '-thread_queue_size', '1024',
-                    '-i', 'default',
-                    '-c:v', 'libx264',
-                    '-preset', 'ultrafast',
-                    '-tune', 'zerolatency',
-                    '-b:v', '100k',
-                    '-c:a', 'aac', 
-                    '-ar', '44100',
-                    '-ac', '1',
-                    '-af', 'afftdn',
-                    '-maxrate', '3000k',
-                    '-bufsize', '300k',
-                    '-f', f'{const.VIDEO_CODEC}',
-                    f'{const.RTMP_URL}/{MEETING_ID}_{USER_ID}'
-        ]
-        self.stream = subprocess.Popen(self.send_default_audio_video_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        # self.send_default_audio_video_command = ['ffmpeg', 
+        #             '-f', 'v4l2',
+        #             '-s', f'{const.FRAME_WIDTH}x{const.FRAME_HEIGHT}', 
+        #             '-thread_queue_size', '1024',
+        #             '-i', '/dev/video0',
+        #             '-f', 'alsa',
+        #             '-thread_queue_size', '1024',
+        #             '-i', 'default',
+        #             '-c:v', 'libx264',
+        #             '-preset', 'ultrafast',
+        #             '-tune', 'zerolatency',
+        #             '-b:v', '100k',
+        #             '-c:a', 'aac', 
+        #             '-ar', '44100',
+        #             '-ac', '1',
+        #             '-af', 'afftdn',
+        #             '-maxrate', '3000k',
+        #             '-bufsize', '300k',
+        #             '-f', f'{const.VIDEO_CODEC}',
+        #             f'{const.RTMP_URL}/{MEETING_ID}_{USER_ID}'
+        # ]
+        # self.stream = subprocess.Popen(self.send_default_audio_video_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
         #Audio only command
         # self.recv_command = [
@@ -53,16 +53,16 @@ class VideoConferencingHomePage(QWidget):
         self.capture = None
         self.audio_stream = None
 
-        self.title = QLabel("<font color=#fc1803 size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
-        self.send_video_to_server_button = QPushButton("Send Video to Server")
-        self.receive_video_from_server_button = QPushButton("Receive Video from Server")
-        self.layout = QVBoxLayout(self)
-        self.layout.addWidget(self.title)
-        self.layout.addWidget(self.send_video_to_server_button)
-        self.layout.addWidget(self.receive_video_from_server_button)
+        # self.title = QLabel("<font color=#fc1803 size=40>Video Conferencing App</font>", alignment=Qt.AlignHCenter)
+        # self.send_video_to_server_button = QPushButton("Send Video to Server")
+        # self.receive_video_from_server_button = QPushButton("Receive Video from Server")
+        # self.layout = QVBoxLayout(self)
+        # self.layout.addWidget(self.title)
+        # self.layout.addWidget(self.send_video_to_server_button)
+        # self.layout.addWidget(self.receive_video_from_server_button)
 
-        self.send_video_to_server_button.clicked.connect(self.send_video_to_server)
-        self.receive_video_from_server_button.clicked.connect(self.start_stream_thread)
+        # self.send_video_to_server_button.clicked.connect(self.send_video_to_server)
+        # self.receive_video_from_server_button.clicked.connect(self.start_stream_thread)
 
     def closeEvent(self, event):
         print("Quitting Application")
@@ -273,45 +273,45 @@ class VideoConferencingHomePage(QWidget):
     def thread_finished(self):
         print("Thread closed")
 
-    def test_play(self):
-        vlc_instance = vlc.Instance()
-        media_player = vlc_instance.media_player_new()
-        Media = vlc_instance.media_new(const.RTMP_URL)
-        Media.get_mrl()
-        media_player.set_media(Media)
-        media_player.play()
+    # def test_play(self):
+    #     vlc_instance = vlc.Instance()
+    #     media_player = vlc_instance.media_player_new()
+    #     Media = vlc_instance.media_new(const.RTMP_URL)
+    #     Media.get_mrl()
+    #     media_player.set_media(Media)
+    #     media_player.play()
 
-    def stream_audio_play(self):
-        print("Reading audio from server")
+    # def stream_audio_play(self):
+    #     print("Reading audio from server")
 
-        self.p = pyaudio.PyAudio()
-        self.audio_stream = self.p.open(
-            format=pyaudio.paInt16,
-            channels=1,
-            rate=44100,
-            output=True,
-            frames_per_buffer=1024
-        )
+    #     self.p = pyaudio.PyAudio()
+    #     self.audio_stream = self.p.open(
+    #         format=pyaudio.paInt16,
+    #         channels=1,
+    #         rate=44100,
+    #         output=True,
+    #         frames_per_buffer=1024
+    #     )
         
-        while(True):
-            try:
-                # Play audio from stdout
-                if self.close_called == True:
-                    break
-                data = self.receive_video_from_server_process.stdout.read(const.FRAME_HEIGHT * const.FRAME_WIDTH * 2)
-                self.audio_stream.write(data)
-            except Exception as e:
-                # print("Exception occured during audio receive : ", e)
-                continue
-            finally:
-                if self.audio_stream != None:
-                    self.audio_stream.stop_stream()
-                    self.audio_stream.close()
-                if self.p != None:
-                    self.p.terminate()
-                self.receive_video_from_server_process.stdout.flush()
-                self.receive_video_from_server_process.terminate()
-                self.receive_video_from_server_process.wait()
+    #     while(True):
+    #         try:
+    #             # Play audio from stdout
+    #             if self.close_called == True:
+    #                 break
+    #             data = self.receive_video_from_server_process.stdout.read(const.FRAME_HEIGHT * const.FRAME_WIDTH * 2)
+    #             self.audio_stream.write(data)
+    #         except Exception as e:
+    #             # print("Exception occured during audio receive : ", e)
+    #             continue
+    #         finally:
+    #             if self.audio_stream != None:
+    #                 self.audio_stream.stop_stream()
+    #                 self.audio_stream.close()
+    #             if self.p != None:
+    #                 self.p.terminate()
+    #             self.receive_video_from_server_process.stdout.flush()
+    #             self.receive_video_from_server_process.terminate()
+    #             self.receive_video_from_server_process.wait()
         
 if __name__ == "__main__":
     app = QApplication([])

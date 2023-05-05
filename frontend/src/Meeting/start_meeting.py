@@ -3,8 +3,8 @@ from PySide6.QtCore import Qt, QSize
 from Meeting.meeting import MeetingPage
 from PySide6.QtWidgets import QWidget, QMainWindow
 from api_requests import end_meeting
-import cv2, qimage2ndarray, numpy, subprocess, threading
-
+import cv2, qimage2ndarray, numpy, subprocess, threading, constant as const, time
+from Client import VideoConferencingHomePage
 
 # Define the dimensions of the video frames
 FRAME_WIDTH = 640
@@ -17,26 +17,29 @@ SERVER_PORT = 4000
 # Video Codec
 VIDEO_CODEC = 'flv'
 
-send_command = ['ffmpeg', 
-            '-f', 'rawvideo', 
-            '-pix_fmt', 'bgr24',
-            '-s', f'{FRAME_WIDTH}x{FRAME_HEIGHT}', 
-            '-i', '-',
-            '-f', 'alsa',
-            '-i', 'default',
-            '-c:v', 'libx264',
-            '-preset', 'veryfast',
-            '-tune', 'zerolatency',
-            '-b:v', '100k',
-            '-c:a', 'aac', 
-            '-ar', '44100',
-            '-ac', '1',
-            '-af', 'afftdn',
-            '-maxrate', '3000k',
-            '-bufsize', '100k',
-            '-f', f'{VIDEO_CODEC}',
-            f'rtmp://{SERVER_IP}/live/stream'
-]
+# send_command = ['ffmpeg', 
+#             '-f', 'rawvideo', 
+#             '-pix_fmt', 'bgr24',
+#             '-s', f'{FRAME_WIDTH}x{FRAME_HEIGHT}', 
+#             '-i', '-',
+#             '-f', 'alsa',
+#             '-i', 'default',
+#             '-c:v', 'libx264',
+#             '-preset', 'veryfast',
+#             '-tune', 'zerolatency',
+#             '-b:v', '100k',
+#             '-c:a', 'aac', 
+#             '-ar', '44100',
+#             '-ac', '1',
+#             '-af', 'afftdn',
+#             '-maxrate', '3000k',
+#             '-bufsize', '100k',
+#             '-f', f'{VIDEO_CODEC}',
+#             f'rtmp://{SERVER_IP}/live/stream'
+# ]
+
+
+
 
 recv_command = ['ffmpeg',
             '-i', f'rtmp://{SERVER_IP}/live/test_test',
@@ -63,6 +66,36 @@ class StartMeeting(QMainWindow):
         self.resize(700, 500)
         self.setAutoFillBackground(True)
         self.setStyleSheet("QMainWindow" "{" "background : #313a46;" "}")
+
+        self.send_default_audio_video_command = ['ffmpeg', 
+            '-f', 'v4l2',
+            '-s', f'{const.FRAME_WIDTH}x{const.FRAME_HEIGHT}', 
+            '-thread_queue_size', '1024',
+            '-i', '/dev/video0',
+            '-f', 'alsa',
+            '-thread_queue_size', '1024',
+            '-i', 'default',
+            '-c:v', 'libx264',
+            '-preset', 'ultrafast',
+            '-tune', 'zerolatency',
+            '-b:v', '100k',
+            '-c:a', 'aac', 
+            '-ar', '44100',
+            '-ac', '1',
+            '-af', 'afftdn',
+            '-maxrate', '3000k',
+            '-bufsize', '300k',
+            '-f', f'{const.VIDEO_CODEC}',
+            f'{const.RTMP_URL}/{self.meeting_id}_{self.user_id}'
+        ]
+        self.stream = subprocess.Popen(self.send_default_audio_video_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        print("Send started")
+        time.sleep(20)
+        self.home_page = VideoConferencingHomePage()
+        # self.home_page.display_video_frame_using_ffmpeg_subprocess(self.meeting_page.labels[0], self.meeting_id, self.user_id)
+
+        thread_ffmpeg_display = threading.Thread(target=self.home_page.display_video_frame_using_ffmpeg_subprocess, args=(self.meeting_page.labels[0], self.meeting_id, self.user_id), daemon=True)
+        thread_ffmpeg_display.start()
 
         # # Send Video
         # self.stream = subprocess.Popen(self.send_command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
