@@ -5,9 +5,9 @@ QHttpServerResponse loginResponse(const QHttpServerRequest& request){
         QJsonObject loginInfo = QJsonDocument::fromJson(request.body()).object();
         QString email = loginInfo.value("email").toString();
         QString password = loginInfo.value("password").toString();
-        int userId = findUserDetails(email, password);
-        if(userId){
-            QJsonObject response = {{"message", "Login Success"}, {"id", userId }};
+        QStringList userDetails = findUserDetails(email, password);
+        if(!userDetails.isEmpty()){
+            QJsonObject response = {{"message", "Login Success"}, {"id", userDetails[0]}, {"email", email}, {"name", userDetails[1]}};
             return QHttpServerResponse(response, QHttpServerResponse::StatusCode::Ok);
         }
         else{
@@ -27,7 +27,7 @@ QHttpServerResponse createUserResponse(const QHttpServerRequest& request){
         QString name = userInfo.value("name").toString();
         QString userId = createUser(email, password, name);
         if(userId != "error"){
-            QJsonObject response = {{"message", "User Creation Success"},{"userId", userId}};
+            QJsonObject response = {{"message", "User Creation Success"}, {"userId", userId}, {"email", email}, {"name", name}};
             return QHttpServerResponse(response, QHttpServerResponse::StatusCode::Ok);
         }
         else{
@@ -46,7 +46,7 @@ QHttpServerResponse createNewMeetingResponse(const QHttpServerRequest& request){
         int hostId = meetingInfo.value("userId").toInt();
         QString meetingId = createMeeting(hostId);
         if(meetingId != "error"){
-            QJsonObject response = {{"message", "Meeting created"}, {"meetingId", meetingId}};
+            QJsonObject response = {{"message", "Meeting created"}, {"meetingId", meetingId}, {"hostId", hostId}};
             return QHttpServerResponse(response, QHttpServerResponse::StatusCode::Ok);
         }
         else{

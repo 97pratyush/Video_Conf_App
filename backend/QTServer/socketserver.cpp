@@ -31,6 +31,7 @@ void SocketServer::onNewConnection()
 {
     try {
         QWebSocket *pSocket = webSocketServer->nextPendingConnection();
+        qDebug() << "New Connection" << pSocket;
         connect(pSocket, &QWebSocket::textMessageReceived, this, &SocketServer::processTextMessage);
         connect(pSocket, &QWebSocket::disconnected, this, &SocketServer::socketDisconnected);
     } catch (...) {
@@ -73,7 +74,7 @@ void SocketServer::addAndNotifyChatMessage(QString meetingId, QString userName, 
     QJsonObject messageObj;
     messageObj.insert("type", "newChatMessage");
     messageObj.insert("meetingId", meetingId);
-    messageObj.insert("userName", userName);
+    messageObj.insert("sender", userName);
     messageObj.insert("message", message);
 
     QJsonDocument messageDoc(messageObj);
@@ -104,7 +105,7 @@ void SocketServer::processTextMessage(QString message)
 {
     try {
         QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-//        qDebug() << "Message received:" << message;
+        qDebug() << "Message received:" << message;
         if (pClient) {
             QJsonDocument messageDoc = QJsonDocument::fromJson(message.toUtf8());
             QJsonObject messageObj = messageDoc.object();
