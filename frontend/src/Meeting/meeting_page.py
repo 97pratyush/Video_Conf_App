@@ -229,7 +229,7 @@ class MeetingPage(object):
         if self.socket_client.get_connection_state():
             print("Connected to participants list")
             subscriptionInfo = {"type": f'{PARTICIPANTS_TOPIC}',
-                            "meetingId": str(self.meeting_id), "userId": self.user_id}
+                            "meetingId": str(self.meeting_id), "userId": str(self.user_id)}
             self.socket_client.send_message(json.dumps(subscriptionInfo))
         else:
             print("Not connected to participants list")

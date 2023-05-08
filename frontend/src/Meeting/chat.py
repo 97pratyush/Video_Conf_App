@@ -68,7 +68,7 @@ class ChatScreen(QWidget):
         if self.socket_client.get_connection_state():
             print("Connected")
             subscriptionInfo = {"type": "getChatMessages",
-                            "meetingId": str(self.meeting_id), "userId": self.user_id}
+                            "meetingId": str(self.meeting_id), "userId": str(self.user_id)}
             self.socket_client.send_message(json.dumps(subscriptionInfo))
         else:
             print("Not connected to chat topic")
@@ -77,7 +77,7 @@ class ChatScreen(QWidget):
         messageText = self.message_input.text()
         self.message_input.clear()
         newChatMessageText = {"type": "sendChatMessage",
-                              "meetingId": str(self.meeting_id), "userName": self.user_name, "message": messageText}
+                              "meetingId": str(self.meeting_id), "userId": str(self.user_id), "userName": self.user_name, "message": messageText}
         self.socket_client.send_message(json.dumps(newChatMessageText))
 
     def receive_messages(self, data):
