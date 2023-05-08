@@ -31,6 +31,7 @@ private:
     QWebSocketServer *webSocketServer;
     QMap<QString, QMap<QString, QWebSocket *>> socketClients;// meetingId => (userId => socket)
     QMap<QString, QList<QPair<QString, QString>>> chatHistory;// meetingId => chat history
+    QMap<QString, QString> participantDetails;
     void notifyParticipantListUpdated(QString& meetingId);
     void addAndNotifyChatMessage(QString meetingId, QString sender, QString message);
 };
