@@ -16,3 +16,9 @@ MAX_WAIT_TIME_FOR_SERVER = 10
 MAX_WAIT_TIME_TO_SEND = 5
 
 MAX_TRIES = 30
+
+# Define the address and port to use for the socket connection
+WS_URL = "ws://8.tcp.ngrok.io:10103"
+
+# API URL
+URL = "https://588b-2601-646-9d01-1da0-494b-1db0-121-2bc0.ngrok-free.app"

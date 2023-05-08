@@ -1,20 +1,20 @@
 import requests
 import json
+from constant import URL
 
-url = "https://31c9-2601-646-9d01-1da0-306f-58d9-970e-e48.ngrok-free.app"
 
 def post(endpoint, payload):
     headers = {"Content-Type": "application/json"}
     response = requests.post(
-        f"{url}/{endpoint}", data=json.dumps(payload), headers=headers
+        f"{URL}/{endpoint}", data=json.dumps(payload), headers=headers
     )
 
     if response.status_code in [200, 201, 401, 403]:
         print(response.json())
     elif response.status_code in [404, 500]:
-        print(f"Error:\n Url:{url}/{endpoint} || Payload:{payload}.\n Response:\n", response.status_code , response.json())
+        print(f"Error:\n Url:{URL}/{endpoint} || Payload:{payload}.\n Response:\n", response.status_code , response.json())
     else:
-        print(f"Check the request again. Something went wrong. Url:{url}/{endpoint} || Payload:{payload}.")
+        print(f"Check the request again. Something went wrong. Url:{URL}/{endpoint} || Payload:{payload}.")
 
     return response
 

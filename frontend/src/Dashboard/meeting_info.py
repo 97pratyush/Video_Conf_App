@@ -43,6 +43,6 @@ class MeetingInfoDialog(QDialog):
         self.setLayout(self.layout)
 
     def accept(self) -> None:
-        self.start_meeting = StartMeeting()
+        self.start_meeting = StartMeeting(self.user_details, self.meeting_id)
         # self.start_meeting.show()
         return super().accept()

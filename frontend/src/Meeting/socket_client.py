@@ -3,8 +3,7 @@ from PySide6.QtCore import QObject, Signal
 import threading
 import json
 
-# Define the address and port to use for the socket connection
-WS_URL = "ws://8.tcp.ngrok.io:13013"
+from constant import WS_URL
 
 # Define a global variable to hold the socket object
 ws = None
@@ -72,3 +71,11 @@ class SocketClient(QObject):
             return ws.sock and ws.sock.connected
         else:
             return False
+        
+    def close_socket(self):
+        print("closing")
+        try:
+            global ws
+            ws.close()
+        except Exception as e:
+            print(e)
