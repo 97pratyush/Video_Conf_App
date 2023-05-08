@@ -31,7 +31,7 @@ class MeetingPage(object):
         self.user_name = user_details['name']
         self.meeting_id = int(meeting_id)
 
-        self.socket_client = SocketClient()
+        self.socket_client = SocketClient(meeting_id, user_details['id'], user_details['name'])
         self.socket_client.message_received.connect(self.receive_participants)
         self.subscribeToParticpants()
         
@@ -225,12 +225,11 @@ class MeetingPage(object):
             print(e)
 
     def subscribeToParticpants(self):
-        time.sleep(2)
+        time.sleep(1)
         if self.socket_client.get_connection_state():
             print("Connected to participants list")
-            subscriptionInfo = {"type": f'{PARTICIPANTS_TOPIC}',
-                            "meetingId": str(self.meeting_id), "userId": str(self.user_id)}
-            self.socket_client.send_message(json.dumps(subscriptionInfo))
+            subscriptionInfo = {"type": f'{PARTICIPANTS_TOPIC}'}
+            self.socket_client.send_message(subscriptionInfo)
         else:
             print("Not connected to participants list")
         

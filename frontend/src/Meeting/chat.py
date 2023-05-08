@@ -2,7 +2,6 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import QWidget, QLabel, QListView, QVBoxLayout, QListWidget, QListWidgetItem, QLineEdit, QPushButton
 from PySide6.QtGui import QColor, QBrush
 import json
-from Meeting.socket_client import SocketClient
 import time
 from style import primary_cta_style
 
@@ -67,18 +66,16 @@ class ChatScreen(QWidget):
         time.sleep(2)
         if self.socket_client.get_connection_state():
             print("Connected")
-            subscriptionInfo = {"type": "getChatMessages",
-                            "meetingId": str(self.meeting_id), "userId": str(self.user_id)}
-            self.socket_client.send_message(json.dumps(subscriptionInfo))
+            subscriptionInfo = {"type": "getChatMessages"}
+            self.socket_client.send_message(subscriptionInfo)
         else:
             print("Not connected to chat topic")
         
     def send_new_chat_message(self):
         messageText = self.message_input.text()
         self.message_input.clear()
-        newChatMessageText = {"type": "sendChatMessage",
-                              "meetingId": str(self.meeting_id), "userId": str(self.user_id), "userName": self.user_name, "message": messageText}
-        self.socket_client.send_message(json.dumps(newChatMessageText))
+        newChatMessage = {"type": "sendChatMessage", "message": messageText}
+        self.socket_client.send_message(newChatMessage)
 
     def receive_messages(self, data):
         try:
