@@ -37,7 +37,7 @@ class StartMeeting:
 
     def end_call(self):
         try:
-            self.meeting_page.chat_page.socket_client.close_socket()
+            self.meeting_page.socket_client.close_socket()
             end_meeting(self.user_id, self.meeting_id)
             self.mainWindow.close()
             print("Ending call and closing streams")
