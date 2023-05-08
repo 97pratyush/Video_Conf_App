@@ -11,8 +11,12 @@ ws = None
 class SocketClient(QObject):
     message_received = Signal(dict)
 
-    def __init__(self):
+    def __init__(self, meeting_id, user_id, user_name):
         super().__init__()
+        self.meeting_id = meeting_id
+        self.user_id = user_id
+        self.user_name = user_name
+
         conn_status = self.get_connection_state()
         if conn_status == False or conn_status is None:
             self.connect_to_socket()
@@ -61,11 +65,16 @@ class SocketClient(QObject):
             print(e)
 
     def send_message(self, message):
+        message["userId"] = str(self.user_id)
+        message["userName"] = self.user_name
+        message["meetingId"] = str(self.meeting_id)
         print("here in send_message", message)
+
+        message_str = json.dumps(message)
         # Send the message to the server
         if message:
             global ws
-            ws.send(message)
+            ws.send(message_str)
 
     def get_connection_state(self):
         global ws

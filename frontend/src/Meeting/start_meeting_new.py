@@ -5,7 +5,6 @@ from api_requests import end_meeting
 from Streaming.send_and_display_video import SendandDisplayVideo
 from Streaming.receive_stream import ReceiveStream
 import threading, constant as const
-from Meeting.socket_client import SocketClient
 
 class StartMeeting:
     def __init__(self, user_details, meeting_id) -> None:
