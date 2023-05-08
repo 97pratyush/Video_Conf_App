@@ -1,6 +1,6 @@
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel
-import cv2, subprocess, qimage2ndarray, time, pyaudio, constant as const
+import cv2, subprocess, qimage2ndarray, time, constant as const
 
 class SendandDisplayVideo():
     def __init__(self, image_label : QLabel, meeting_id : str, user_id : str) -> None:
@@ -83,14 +83,6 @@ class SendandDisplayVideo():
             self.send_process_opencv.stdin.flush()
             self.send_process_opencv.stdin.close()
         self.send_process_opencv.terminate()
-
-    def mute_audio(self):
-        # Get the default microphone input device
-        device_index = pyaudio.get_default_input_device_index()
-
-        # Set the microphone input volume to 0
-        pyaudio.set_device_volume(device_index, 0)
-        
 
     def display_video_frame(self, frame):
         # Convert the frame from BGR to RGB
