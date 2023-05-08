@@ -4,9 +4,6 @@
 #include <QtCore/QObject>
 #include <QtCore/QList>
 #include <QtCore/QByteArray>
-#include <QtCore/QMap>
-#include <QtCore/QPair>
-
 
 QT_FORWARD_DECLARE_CLASS(QWebSocketServer)
 QT_FORWARD_DECLARE_CLASS(QWebSocket)
@@ -14,25 +11,23 @@ QT_FORWARD_DECLARE_CLASS(QWebSocket)
 class SocketServer : public QObject
 {
     Q_OBJECT
-
 public:
     explicit SocketServer(quint16 port, bool debug = false, QObject *parent = nullptr);
     ~SocketServer();
 
-signals:
+Q_SIGNALS:
     void closed();
 
-private slots:
+private Q_SLOTS:
     void onNewConnection();
     void processTextMessage(QString message);
+    void sendTextMessage(QString message);
     void socketDisconnected();
 
 private:
     QWebSocketServer *webSocketServer;
-    QMap<QString, QMap<QString, QWebSocket *>> socketClients;// meetingId => (userId => socket)
-    QMap<QString, QList<QPair<QString, QString>>> chatHistory;// meetingId => chat history
-    void notifyParticipantListUpdated(QString& meetingId);
-    void addAndNotifyChatMessage(QString meetingId, QString sender, QString message);
+    QList<QWebSocket *> socketClients;
+    bool m_debug;
 };
 
 #endif // SOCKETSERVER_H

@@ -48,7 +48,11 @@ void SocketServer::notifyParticipantListUpdated(QString& meetingId)
     QStringList participantList;
     QMap<QString, QWebSocket*> meetingParticipants = socketClients[meetingId];
     for (auto it = meetingParticipants.constBegin(); it != meetingParticipants.constEnd(); ++it) {
-        participantList << it.key();
+        QJsonObject userObj;
+        userObj.insert("id",it.key());
+        userObj.insert("name", participantDetails[it.key()]);
+        QJsonDocument userDoc(userObj);
+        participantList.append(userDoc.toJson(QJsonDocument::Compact));
     }
 
     // Create a JSON message with the updated participant list
@@ -110,22 +114,24 @@ void SocketServer::processTextMessage(QString message)
             QJsonDocument messageDoc = QJsonDocument::fromJson(message.toUtf8());
             QJsonObject messageObj = messageDoc.object();
             QString messageType = messageObj.value("type").toString();
+            QString meetingId = messageObj.value("meetingId").toString();
+            QString userId = messageObj.value("userId").toString();
+            QString userName = messageObj.value("userName").toString();
+
+            if(meetingId == "" || userId == "" || messageType == "" || userName == ""){
+                pClient->sendTextMessage("meetingId, userId, userName or messageType Invalid");
+            }
             if (messageType == "subscribeToParticipantList") {
-                QString meetingId = messageObj.value("meetingId").toString();
-                QString userId = messageObj.value("userId").toString();
                 socketClients[meetingId][userId] = pClient;
+                participantDetails[userId] = userName;
                 notifyParticipantListUpdated(meetingId);
                 pClient->sendTextMessage("Successfully subscribed to meeting id: "+ meetingId);
             }
             else if (messageType == "sendChatMessage"){
-                QString meetingId = messageObj.value("meetingId").toString();
-                QString userName = messageObj.value("userName").toString();
                 QString messageText = messageObj.value("message").toString();
                 addAndNotifyChatMessage(meetingId, userName, messageText);
             }
             else if (messageType == "getChatMessages"){
-                QString meetingId = messageObj.value("meetingId").toString();
-                QString userId = messageObj.value("userId").toString();
                 socketClients[meetingId][userId] = pClient;
                 if (!chatHistory.contains(meetingId)) {
                     QList<QPair<QString, QString>> history;
@@ -175,6 +181,7 @@ void SocketServer::socketDisconnected()
                     break;
                 }
             }
+            qDebug() << "meetingId: " << meetingId << " userid: "<<userId;
             if (!meetingId.isEmpty() && !userId.isEmpty()) {
                 socketClients[meetingId].remove(userId);
                 notifyParticipantListUpdated(meetingId);
