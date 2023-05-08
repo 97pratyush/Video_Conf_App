@@ -90,7 +90,7 @@ class VideoConferencingHomePage(QWidget):
             self.p.terminate()
 
         if self.send_video:
-            self.send_video.stop_stream()
+            self.send_video.stop_stream_wrapper()
 
         super().closeEvent(event)
 
@@ -141,10 +141,10 @@ class VideoConferencingHomePage(QWidget):
         self.send_video = SendandDisplayVideo(self.image_label, 'test', 'test')
 
         # Send using manual subprocess
-        thread_ffmpeg_send = threading.Thread(target=self.send_video.send_stream_to_server_legacy, daemon=True)
+        thread_ffmpeg_send = threading.Thread(target=self.send_video.send_stream_to_server, daemon=True)
         thread_ffmpeg_send.start()
         
-        thread_send_stream = threading.Thread(target=self.send_video.send_stream_to_server, daemon=True)
+        thread_send_stream = threading.Thread(target=self.send_video.send_stream_to_server_using_wrapper, daemon=True)
         # thread_send_stream.start()
 
         # global player

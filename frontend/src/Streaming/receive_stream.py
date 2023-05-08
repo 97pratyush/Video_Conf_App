@@ -1,9 +1,16 @@
+from PySide6.QtCore import QThread
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel
 from ffpyplayer.player import MediaPlayer
 import cv2, qimage2ndarray, numpy, time, constant as const
 
+# class ReceiveStream(QThread):
 class ReceiveStream():
+    # def __init__(self, image_label : QLabel, url : str):
+    #     super().__init__()
+    #     self.image_label = image_label
+    #     self.url = url
+
     def start_participant_stream(self, user_video_tile : QLabel, meeting_id : str, user_id : str):
         url = f'{const.RTMP_URL}/{meeting_id}_{user_id}'
 

@@ -8,15 +8,14 @@ from style import primary_cta_style
 
 class ChatScreen(QWidget):
 
-    def __init__(self, user_details, meeting_id):
+    def __init__(self, user_details, meeting_id, socket_client):
         super().__init__()
 
         self.user_details = user_details
         self.user_id = user_details['id']
         self.user_name = user_details['name']
         self.meeting_id = meeting_id
-
-        self.socket_client = SocketClient()
+        self.socket_client = socket_client
         self.socket_client.message_received.connect(self.receive_messages)
 
         self.setWindowTitle("Chat")
@@ -59,19 +58,21 @@ class ChatScreen(QWidget):
 
         # Connect the send_button clicked signal to the send_message method
         self.send_button.clicked.connect(self.send_new_chat_message)
-        time.sleep(2)
-        if self.socket_client.get_connection_state():
-            print("Connected")
-            self.subscribeToChat()
-        else:
-            print("Not connected")
+
+        self.subscribeToChat()
+        
         # self.chat_display.append(data)
 
     def subscribeToChat(self):
-        subscriptionInfo = {"type": "getChatMessages",
+        time.sleep(2)
+        if self.socket_client.get_connection_state():
+            print("Connected")
+            subscriptionInfo = {"type": "getChatMessages",
                             "meetingId": str(self.meeting_id), "userId": self.user_id}
-        self.socket_client.send_message(json.dumps(subscriptionInfo))
-
+            self.socket_client.send_message(json.dumps(subscriptionInfo))
+        else:
+            print("Not connected to chat topic")
+        
     def send_new_chat_message(self):
         messageText = self.message_input.text()
         self.message_input.clear()

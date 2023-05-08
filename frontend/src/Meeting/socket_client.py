@@ -13,7 +13,8 @@ class SocketClient(QObject):
 
     def __init__(self):
         super().__init__()
-        self.connect_to_socket()
+        if self.get_connection_state() == False:
+            self.connect_to_socket()
 
     def connect_to_socket(self):
         try:

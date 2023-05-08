@@ -22,3 +22,5 @@ WS_URL = "ws://8.tcp.ngrok.io:10103"
 
 # API URL
 URL = "https://588b-2601-646-9d01-1da0-494b-1db0-121-2bc0.ngrok-free.app"
+
+PARTICIPANTS_TOPIC = 'subscribeToParticipantList'

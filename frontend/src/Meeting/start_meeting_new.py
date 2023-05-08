@@ -21,15 +21,12 @@ class StartMeeting:
         self.meeting_page.setupUi(self.mainWindow)
         self.meeting_page.end_meeting.clicked.connect(self.end_call)
 
-        self.send_video = SendandDisplayVideo(self.meeting_page.self_video, self.meeting_id, self.user_id)
+        self.send_stream = SendandDisplayVideo(self.meeting_page.self_video, self.meeting_id, self.user_id)
 
-        # Send using ffmpeg wrapper
-        thread_send_stream = threading.Thread(target=self.send_video.send_stream_to_server, daemon=True)
-        # thread_send_stream.start()
+        # Send stream using ffmpeg and display it in UI
+        thread_send_stream = threading.Thread(target=self.send_stream.send_stream_to_server, daemon=True)
+        thread_send_stream.start()
 
-        # Send using manual subprocess
-        thread_send_stream_legacy = threading.Thread(target=self.send_video.send_stream_to_server_legacy, daemon=True)
-        thread_send_stream_legacy.start()
         self.mainWindow.show()
 
     # Need to be called for each participant
@@ -46,6 +43,8 @@ class StartMeeting:
             print("Ending call and closing streams")
 
             # Stop sending and displaying own video
-            self.send_video.stop_stream_legacy() # Or self.send_video.stop_stream()
-        except:
+            self.send_stream.stop_stream()
+        except Exception as e:
+            print("Exception occured during end meeting :", e)
+        finally:
             self.mainWindow.close()

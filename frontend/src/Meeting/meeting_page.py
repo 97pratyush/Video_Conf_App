@@ -20,6 +20,9 @@ from PySide6.QtWidgets import (
     QSpacerItem
 )
 from Meeting.chat import ChatScreen
+from Meeting.socket_client import SocketClient
+from constant import PARTICIPANTS_TOPIC
+import time, json
 
 class MeetingPage(object):
     def __init__(self, user_details, meeting_id) -> None:
@@ -27,6 +30,10 @@ class MeetingPage(object):
         self.user_id = user_details['id']
         self.user_name = user_details['name']
         self.meeting_id = int(meeting_id)
+
+        self.socket_client = SocketClient()
+        self.socket_client.message_received.connect(self.receive_participants)
+        self.subscribeToParticpants()
         
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -170,7 +177,7 @@ class MeetingPage(object):
             "background-color: rgb(255, 255, 255);\n" "color: rgb(0, 0, 0);"
         )
         self.stackedWidget.setObjectName("stackedWidget")
-        self.chat_page = ChatScreen(self.user_details, self.meeting_id)
+        self.chat_page = ChatScreen(self.user_details, self.meeting_id, self.socket_client)
         self.chat_page.setObjectName("chat_page")
         # self.chat_page_title = QLabel(parent=self.chat_page)
         # self.chat_page_title.setGeometry(QRect(38, 40, 151, 61))
@@ -207,3 +214,23 @@ class MeetingPage(object):
 
     def show_chat(self):
         self.stackedWidget.setCurrentIndex(0)
+
+    def receive_participants(self, data):
+        try:
+            if data["type"] == "participantListUpdated":
+                print(data)
+            elif data["type"] == "newChatMessage":
+                self.addNewChatMessage(data["sender"], data["message"])
+        except Exception as e:
+            print(e)
+
+    def subscribeToParticpants(self):
+        time.sleep(2)
+        if self.socket_client.get_connection_state():
+            print("Connected to participants list")
+            subscriptionInfo = {"type": f'{PARTICIPANTS_TOPIC}',
+                            "meetingId": str(self.meeting_id), "userId": self.user_id}
+            self.socket_client.send_message(json.dumps(subscriptionInfo))
+        else:
+            print("Not connected to participants list")
+        
