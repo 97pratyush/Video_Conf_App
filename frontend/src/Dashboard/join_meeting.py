@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QLineEd
 from PySide6.QtGui import QIntValidator
 from style import primary_cta_style, textbox_style
 from api_requests import join_meeting
-from Meeting.start_meeting import StartMeeting
+from Meeting.start_meeting_new import StartMeeting
 
 class JoinMeetingDialog(QDialog):
     def __init__(self, user_details, parent=None):
@@ -47,7 +47,6 @@ class JoinMeetingDialog(QDialog):
             response = join_meeting(self.user_id, meeting_id)
             if response.status_code == 200:
                 self.start_meeting = StartMeeting(self.user_details, meeting_id)
-                self.start_meeting.show()
                 return super().accept()
             else:
                 self.error_label.setText("Incorrect meeting id.")
