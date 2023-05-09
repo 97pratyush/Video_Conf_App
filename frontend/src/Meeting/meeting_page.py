@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QSpacerItem
 )
 from Meeting.chat import ChatScreen
+from Meeting.participants import ParticipantScreen
 from Meeting.socket_client import SocketClient
 from constant import *
 from style import end_meeting_cta_style
@@ -52,7 +53,8 @@ class MeetingPage(object):
         MainWindow.setSizePolicy(sizePolicy)
         MainWindow.setAutoFillBackground(False)
         MainWindow.setStyleSheet(
-            "background-color: #313a46;\n" "color: rgb(255, 255, 255);"
+            "background-color: #313a46;\n" 
+            "color: rgb(255, 255, 255);"
         )
         self.centralwidget = QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -73,31 +75,36 @@ class MeetingPage(object):
         # Video Display labels
         self.self_video = QLabel(parent=self.video_container)
         self.self_video.setStyleSheet(
-            "border-color: rgb(255, 255, 255);\n" "color: rgb(255, 255, 255);"
+            # "border-color: rgb(255, 255, 255);\n" 
+            "color: rgb(255, 255, 255);"
         )
-        self.self_video.setFrameShape(QFrame.Shape.Box)
+        # self.self_video.setFrameShape(QFrame.Shape.Box)
         self.self_video.setScaledContents(True)
         self.self_video.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.self_video.setObjectName("self")
         self.gridLayout.addWidget(self.self_video, 0, 0, 2, 1)
-        self.participant_1 = QLabel(parent=self.video_container)
-        self.participant_1.setStyleSheet(
-            "border-color: rgb(255, 255, 255);\n" "color: rgb(255, 255, 255);"
-        )
-        self.participant_1.setFrameShape(QFrame.Shape.Box)
-        self.participant_1.setScaledContents(True)
-        self.participant_1.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.participant_1.setObjectName("participant_1")
-        self.gridLayout.addWidget(self.participant_1, 0, 1, 1, 1)
-        self.participant_2 = QLabel(parent=self.video_container)
-        self.participant_2.setStyleSheet(
-            "border-color: rgb(255, 255, 255);\n" "color: rgb(255, 255, 255);"
-        )
-        self.participant_2.setFrameShape(QFrame.Shape.Box)
-        self.participant_2.setScaledContents(True)
-        self.participant_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.participant_2.setObjectName("participant_2")
-        self.gridLayout.addWidget(self.participant_2, 1, 1, 1, 1)
+        
+        # self.participant_1 = QLabel(parent=self.video_container)
+        # self.participant_1.setStyleSheet(
+        #     # "border-color: rgb(255, 255, 255);\n" 
+        #     "color: rgb(255, 255, 255);"
+        # )
+        # # self.participant_1.setFrameShape(QFrame.Shape.Box)
+        # self.participant_1.setScaledContents(True)
+        # self.participant_1.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.participant_1.setObjectName("participant_1")
+        # self.gridLayout.addWidget(self.participant_1, 0, 1, 1, 1)
+        
+        # self.participant_2 = QLabel(parent=self.video_container)
+        # self.participant_2.setStyleSheet(
+        #     # "border-color: rgb(255, 255, 255);\n" 
+        #     "color: rgb(255, 255, 255);"
+        # )
+        # # self.participant_2.setFrameShape(QFrame.Shape.Box)
+        # self.participant_2.setScaledContents(True)
+        # self.participant_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.participant_2.setObjectName("participant_2")
+        # self.gridLayout.addWidget(self.participant_2, 1, 1, 1, 1)
         
         self.control_container = QWidget(parent=self.meeting_container)
         self.control_container.setGeometry(QRect(0, 620, 961, 71))
@@ -166,6 +173,7 @@ class MeetingPage(object):
         )
         self.end_meeting.setObjectName("end_meeting")
         self.horizontalLayout.addWidget(self.end_meeting)
+
         self.stackedWidget = QStackedWidget(parent=self.centralwidget)
         self.stackedWidget.setGeometry(QRect(960, 0, 231, 691))
         sizePolicy = QSizePolicy(
@@ -182,18 +190,15 @@ class MeetingPage(object):
             "background-color: rgb(255, 255, 255);\n" "color: rgb(0, 0, 0);"
         )
         self.stackedWidget.setObjectName("stackedWidget")
+        
         self.chat_page = ChatScreen(self.user_details, self.meeting_id, self.socket_client)
-        self.chat_page.setObjectName("chat_page")
-        # self.chat_page_title = QLabel(parent=self.chat_page)
-        # self.chat_page_title.setGeometry(QRect(38, 40, 151, 61))
-        # self.chat_page_title.setObjectName("label")
+        self.chat_page.setObjectName("chat_page")        
         self.stackedWidget.addWidget(self.chat_page)
-        self.participants_page = QWidget()
+        
+        self.participants_page = ParticipantScreen()
         self.participants_page.setObjectName("participants_page")
-        self.participants_page_title = QLabel(parent=self.participants_page)
-        self.participants_page_title.setGeometry(QRect(40, 30, 161, 71))
-        self.participants_page_title.setObjectName("participants_page_title")
         self.stackedWidget.addWidget(self.participants_page)
+
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -207,12 +212,11 @@ class MeetingPage(object):
         _translate = QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", f"{self.user_name} - Meeting ({self.meeting_id})"))
         self.self_video.setText(_translate("MainWindow", f"{self.user_name}"))
-        self.participant_1.setText(_translate("MainWindow", "Participant 1"))
-        self.participant_2.setText(_translate("MainWindow", "Participant 2"))
+        # self.participant_1.setText(_translate("MainWindow", "Participant 1"))
+        # self.participant_2.setText(_translate("MainWindow", "Participant 2"))
         self.participants_cta.setText(_translate("MainWindow", "Participants"))
         self.chat_cta.setText(_translate("MainWindow", "Chat"))
         self.end_meeting.setText(_translate("MainWindow", "End Meeting"))
-        self.participants_page_title.setText(_translate("MainWindow", "Participants"))
 
     def show_participants(self):
         self.stackedWidget.setCurrentIndex(1)
@@ -223,7 +227,7 @@ class MeetingPage(object):
     def receive_participants(self, data):
         try:
             if data["type"] == "participantListUpdated":
-                print(data)
+                print(f"participantListUpdated: \n{data.json()}")
             elif data["type"] == "newChatMessage":
                 self.addNewChatMessage(data["sender"], data["message"])
         except Exception as e:

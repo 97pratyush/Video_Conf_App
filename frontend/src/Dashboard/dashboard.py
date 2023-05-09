@@ -3,9 +3,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
     QPushButton, 
-    QHBoxLayout,
-    QSpacerItem,
-    QSizePolicy
 )
 from PySide6.QtCore import Qt
 from style import primary_cta_style, secondary_cta_style
@@ -23,7 +20,6 @@ class DashboardPage(QWidget):
         self.welcome_label = QLabel(
             f"<font size=40>Welcome, {self.user_details['name']}</font>", alignment=Qt.AlignCenter
         )
-        # self.user_details.name.valueChanged.connect(lambda: self.welcome_label.setText(f"Welcome, {self.user_details.name}") )
 
         self.create_meeting_cta = QPushButton("Create a meeting")
         self.create_meeting_cta.setStyleSheet(primary_cta_style)
@@ -32,22 +28,6 @@ class DashboardPage(QWidget):
         self.join_meeting_cta = QPushButton("Join Meeting")
         self.join_meeting_cta.setStyleSheet(secondary_cta_style)
         self.join_meeting_cta.clicked.connect(self.join_meeting)
-
-        # self.user_icon_layout = QHBoxLayout(alignment=Qt.AlignRight)
-        # self.signout_cta = QPushButton("Sign Out")
-        # self.user_icon_layout.addWidget(self.signout_cta)
-        # self.user_icon_widget = QWidget()
-        # self.user_icon_widget.setLayout(self.user_icon_layout)
-
-        # self.user_icon_widget = QWidget(parent=self)
-        # self.user_icon_widget.setObjectName("widget1")
-        # self.user_icon_layout = QHBoxLayout(self.user_icon_widget)
-        # self.user_icon_layout.setObjectName("horizontalLayout")
-        # spacerItem = QSpacerItem(679, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        # self.user_icon_layout.addItem(spacerItem)
-        # self.signout_cta = QPushButton(parent=self.user_icon_widget)
-        # self.signout_cta.setObjectName("pushButton")
-        # self.user_icon_layout.addWidget(self.signout_cta)
 
         self.layout = QVBoxLayout()
         self.widgets = [
@@ -62,8 +42,7 @@ class DashboardPage(QWidget):
 
     def start_meeting(self):
         response = create_meeting(self.user_details['id'])
-        # self.meeting_page = MeetingPage()
-        # self.meeting_page.show()
+        
         if response.status_code == 200:
             state.in_meeting = True
             meeting_id = response.json()['meetingId']
