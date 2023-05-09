@@ -8,7 +8,8 @@ class SendandDisplayVideo():
         self.meeting_id = meeting_id
         self.user_id = user_id
         self.label = image_label
-        self.process : subprocess.Popen = None
+        self.capture = None
+        self.send_process_opencv : subprocess.Popen = None
 
         self.url = f'{const.RTMP_URL}/{self.meeting_id}_{self.user_id}'
 
@@ -37,9 +38,9 @@ class SendandDisplayVideo():
         # Open a subprocess to send video
         self.send_process_opencv = subprocess.Popen(send_command_opencv, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        capture = cv2.VideoCapture(cv2.CAP_V4L2) # 0 means default camera at 0 index
-        capture.set(cv2.CAP_PROP_FRAME_WIDTH, const.FRAME_WIDTH)
-        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, const.FRAME_HEIGHT)
+        self.capture = cv2.VideoCapture(cv2.CAP_V4L2) # 0 means default camera at 0 index
+        self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, const.FRAME_WIDTH)
+        self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, const.FRAME_HEIGHT)
 
         start_time = time.time()
         max_tries = 0
@@ -49,7 +50,7 @@ class SendandDisplayVideo():
             while(True):
                 if self.close_called == True:
                     break
-                ret, frame = capture.read()
+                ret, frame = self.capture.read()
                 if ret:
                     #Display frame on Meeting Page
                     self.display_video_frame(frame)
@@ -62,8 +63,8 @@ class SendandDisplayVideo():
                     max_tries += 1
                     if (max_tries >= const.MAX_TRIES and (time.time() - start_time) >= const.MAX_WAIT_TIME_FOR_SERVER): # Wait a maximum of wait time defined or max tries
                         print("Frames not being sent after", const.MAX_TRIES, "tries. Closing operation")
-                        if capture:
-                            capture.release()
+                        if self.capture:
+                            self.capture.release()
                         if self.send_process_opencv.stdin:
                             self.send_process_opencv.stdin.flush()
                             self.send_process_opencv.stdin.close()
@@ -72,18 +73,18 @@ class SendandDisplayVideo():
         except Exception as e:
             print("Exception occured while sending video via opencv :", e)
         finally:
-            if capture:
-                capture.release()
+            if self.capture:
+                self.capture.release()
             if self.send_process_opencv.stdin:
                 self.send_process_opencv.stdin.close()
             self.send_process_opencv.terminate()
 
     def stop_stream(self):
         self.close_called = True
-        if self.send_process_opencv.stdin:
-            self.send_process_opencv.stdin.flush()
-            self.send_process_opencv.stdin.close()
-        self.send_process_opencv.terminate()
+        if self.capture:
+            self.capture.release()
+        if self.send_process_opencv:
+            self.send_process_opencv.terminate()
 
     def display_video_frame(self, frame):
         # Convert the frame from BGR to RGB

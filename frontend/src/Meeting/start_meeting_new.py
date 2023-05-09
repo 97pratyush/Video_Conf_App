@@ -23,10 +23,15 @@ class StartMeeting:
         self.meeting_page.end_meeting.clicked.connect(self.end_call)
 
         self.send_stream = SendandDisplayVideo(self.meeting_page.self_video, self.meeting_id, self.user_id)
-
-        # Send stream using ffmpeg and display it in UI
-        thread_send_stream = threading.Thread(target=self.send_stream.send_stream_to_server, daemon=True)
-        thread_send_stream.start()
+        
+        try:
+            # Send stream using ffmpeg and display it in UI
+            thread_send_stream = threading.Thread(target=self.send_stream.send_stream_to_server, daemon=True)
+            thread_send_stream.start()
+        except Exception as e:
+            print("Exception occured while sending stream :", e)
+        finally:
+            self.send_stream.stop_stream()
 
         self.mainWindow.show()
 
@@ -40,13 +45,12 @@ class StartMeeting:
         state.in_meeting = False
         try:
             self.meeting_page.socket_client.close_socket()
+            # Stop sending and displaying own video
+            self.send_stream.stop_stream()
             end_meeting(self.user_id, self.meeting_id)
             self.mainWindow.close()
             
             print("Ending call and closing streams")
-
-            # Stop sending and displaying own video
-            self.send_stream.stop_stream()
         except Exception as e:
             print("Exception occured during end meeting :", e)
         finally:
