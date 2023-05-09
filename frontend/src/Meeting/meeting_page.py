@@ -258,7 +258,7 @@ class MeetingPage(object):
         try:
             url = f'{RTMP_URL}/{self.meeting_id}_{user_id}'
             self.thread_show_stream = ReceiveStream(url)
-            self.thread_show_stream.frame_changed.connect(self.on_frame_changed)
+            self.thread_show_stream.participant_frame_changed.connect(self.on_frame_changed)
             self.thread_show_stream.start()
 
         except Exception as e:

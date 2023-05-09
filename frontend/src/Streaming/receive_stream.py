@@ -6,7 +6,7 @@ import cv2, qimage2ndarray, numpy, time, constant as const
 
 class ReceiveStream(QThread):
 
-    frame_changed = Signal(object)
+    participant_frame_changed = Signal(object)
 
     def __init__(self, url):
         super().__init__()
@@ -25,7 +25,7 @@ class ReceiveStream(QThread):
                 frame_data = cv2.flip(frame_data, 1)
                 image = qimage2ndarray.array2qimage(frame_data)
                 pixmap = QPixmap.fromImage(image)
-                self.frame_changed.emit(pixmap)
+                self.participant_frame_changed.emit(pixmap)
             elif frame is None:
                 time.sleep(0.01)
 

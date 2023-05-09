@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QMainWindow, QLabel
 from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QPixmap
 from api_requests import end_meeting
-from Streaming.send_and_display_video import SendandDisplayVideo
+from Streaming.send_and_display_video_new import SendandDisplayVideo
 from Streaming.receive_stream import ReceiveStream
 import threading, time, cv2, qimage2ndarray, numpy, constant as const
 from ffpyplayer.player import MediaPlayer
@@ -30,12 +30,13 @@ class StartMeeting:
         
         try:
             # Send stream using ffmpeg and display it in UI
-            thread_send_stream = threading.Thread(target=self.send_stream.send_stream_to_server, daemon=True)
-            thread_send_stream.start()
+            # thread_send_stream = threading.Thread(target=self.send_stream.send_stream_to_server, daemon=True)
+            # thread_send_stream.start()
+            self.send_stream.start()
         except Exception as e:
             print("Exception occured while sending stream :", e)
         finally:
-            self.send_stream.stop_stream()
+            self.send_stream.stop()
 
         self.mainWindow.show()
     
@@ -50,7 +51,8 @@ class StartMeeting:
         try:
             self.meeting_page.socket_client.close_socket()
             # Stop sending and displaying own video
-            self.send_stream.stop_stream()
+            self.send_stream.stop()
+            self.meeting_page.thread_show_stream.stop()
             end_meeting(self.user_id, self.meeting_id)
             self.mainWindow.close()
             
