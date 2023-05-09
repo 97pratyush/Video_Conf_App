@@ -18,9 +18,9 @@ MAX_WAIT_TIME_TO_SEND = 5
 MAX_TRIES = 30
 
 # Define the address and port to use for the socket connection
-WS_URL = "ws://8.tcp.ngrok.io:10103"
+WS_URL = "ws://0.tcp.ngrok.io:17797"
 
 # API URL
-URL = "https://588b-2601-646-9d01-1da0-494b-1db0-121-2bc0.ngrok-free.app"
+URL = "https://1672-2601-646-9d01-1da0-aa6c-39ca-7705-bbb1.ngrok-free.app/"
 
 PARTICIPANTS_TOPIC = 'subscribeToParticipantList'
