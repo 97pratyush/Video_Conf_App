@@ -21,9 +21,12 @@ from PySide6.QtWidgets import (
 )
 from Meeting.chat import ChatScreen
 from Meeting.socket_client import SocketClient
-from constant import PARTICIPANTS_TOPIC
+from constant import *
 from style import end_meeting_cta_style
-import time, json
+from ffpyplayer.player import MediaPlayer
+import time, threading, qimage2ndarray, cv2, numpy
+
+user_stream_player : MediaPlayer = None
 
 class MeetingPage(object):
     def __init__(self, user_details, meeting_id) -> None:
@@ -226,7 +229,7 @@ class MeetingPage(object):
             print(e)
 
     def subscribeToParticpants(self):
-        time.sleep(1)
+        time.sleep(2)
         if self.socket_client.get_connection_state():
             print("Connected to participants list")
             subscriptionInfo = {"type": f'{PARTICIPANTS_TOPIC}'}
@@ -234,3 +237,39 @@ class MeetingPage(object):
         else:
             print("Not connected to participants list")
         
+    def receive_participants(self, data):
+        try:
+            if data["type"] == "participantListUpdated":
+                # self.check_updated_participants(data["participantList"])
+                pass
+        except Exception as e:
+            print(e)
+
+    def check_updated_participants(self, participant_list):
+        try:
+            thread_show_stream = threading.Thread(target=self.start_participant_stream, 
+                                    args=(self.participant_1, self.meeting_id, '34'), daemon=True)
+            thread_show_stream.start()
+        except Exception as e:
+            print("Exception occured while receiving stream :", e)
+        # self.start_participant_stream(self.participant_1, self.meeting_id, '7')
+
+    # def start_participant_stream(self, user_video_tile : QLabel, meeting_id : str, user_id : str):
+    #     # time.sleep(10)
+    #     url = f'{RTMP_URL}/{meeting_id}_{user_id}'
+
+    #     global user_stream_player
+    #     user_stream_player = MediaPlayer(url)
+
+    #     while(True):
+    #         frame, val = user_stream_player.get_frame()
+    #         if val != "eof" and frame is not None:
+    #             img, t = frame
+    #             frame_data = numpy.frombuffer(img.to_bytearray()[0], dtype=numpy.uint8)
+    #             frame_data = frame_data.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
+    #             frame_data = cv2.flip(frame_data, 1)
+    #             image = qimage2ndarray.array2qimage(frame_data)
+    #             pixmap = QtGui.QPixmap.fromImage(image)
+    #             user_video_tile.setPixmap(pixmap)
+    #         elif frame is None:
+    #             time.sleep(0.01)

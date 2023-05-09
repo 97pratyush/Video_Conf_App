@@ -49,6 +49,8 @@ class SendandDisplayVideo():
         try:
             while(True):
                 if self.close_called == True:
+                    if self.send_process_opencv:
+                        self.send_process_opencv.terminate()
                     break
                 ret, frame = self.capture.read()
                 if ret:
