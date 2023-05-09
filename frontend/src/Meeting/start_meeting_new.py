@@ -37,19 +37,7 @@ class StartMeeting:
         finally:
             self.send_stream.stop_stream()
 
-        try:
-            url = f'{const.RTMP_URL}/{self.meeting_id}_{self.user_id}'
-            self.thread_show_stream = ReceiveStream(url)
-            self.thread_show_stream.frame_changed.connect(self.on_frame_changed)
-            self.thread_show_stream.start()
-
-        except Exception as e:
-            print("Exception occured while receiving stream :", e)
-
         self.mainWindow.show()
-
-    def on_frame_changed(self, pixmap):
-        self.meeting_page.participant_1.setPixmap(pixmap)
     
     # Need to be called for each participant
     def receive_video_of_participant(self):

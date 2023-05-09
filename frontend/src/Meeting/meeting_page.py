@@ -24,7 +24,8 @@ from Meeting.socket_client import SocketClient
 from constant import *
 from style import end_meeting_cta_style
 from ffpyplayer.player import MediaPlayer
-import time, threading, qimage2ndarray, cv2, numpy
+from Streaming.receive_stream import ReceiveStream
+import time
 
 user_stream_player : MediaPlayer = None
 
@@ -240,36 +241,29 @@ class MeetingPage(object):
     def receive_participants(self, data):
         try:
             if data["type"] == "participantListUpdated":
-                # self.check_updated_participants(data["participantList"])
+                self.check_updated_participants(data["participantList"])
                 pass
         except Exception as e:
             print(e)
 
     def check_updated_participants(self, participant_list):
         try:
-            thread_show_stream = threading.Thread(target=self.start_participant_stream, 
-                                    args=(self.participant_1, self.meeting_id, '34'), daemon=True)
-            thread_show_stream.start()
+            # Filter new participant and send user id to display their stream
+            self.display_stream('7')
         except Exception as e:
             print("Exception occured while receiving stream :", e)
         # self.start_participant_stream(self.participant_1, self.meeting_id, '7')
 
-    # def start_participant_stream(self, user_video_tile : QLabel, meeting_id : str, user_id : str):
-    #     # time.sleep(10)
-    #     url = f'{RTMP_URL}/{meeting_id}_{user_id}'
+    def display_stream(self, user_id):
+        try:
+            url = f'{RTMP_URL}/{self.meeting_id}_{user_id}'
+            self.thread_show_stream = ReceiveStream(url)
+            self.thread_show_stream.frame_changed.connect(self.on_frame_changed)
+            self.thread_show_stream.start()
 
-    #     global user_stream_player
-    #     user_stream_player = MediaPlayer(url)
+        except Exception as e:
+            print("Exception occured while receiving stream :", e)
 
-    #     while(True):
-    #         frame, val = user_stream_player.get_frame()
-    #         if val != "eof" and frame is not None:
-    #             img, t = frame
-    #             frame_data = numpy.frombuffer(img.to_bytearray()[0], dtype=numpy.uint8)
-    #             frame_data = frame_data.reshape((FRAME_HEIGHT, FRAME_WIDTH, 3))
-    #             frame_data = cv2.flip(frame_data, 1)
-    #             image = qimage2ndarray.array2qimage(frame_data)
-    #             pixmap = QtGui.QPixmap.fromImage(image)
-    #             user_video_tile.setPixmap(pixmap)
-    #         elif frame is None:
-    #             time.sleep(0.01)
+    def on_frame_changed(self, pixmap):
+        # Change label for each participant
+        self.participant_1.setPixmap(pixmap)
