@@ -2,7 +2,6 @@ import requests
 import json
 from constant import URL
 
-
 def post(endpoint, payload):
     headers = {"Content-Type": "application/json"}
     response = requests.post(
@@ -14,7 +13,7 @@ def post(endpoint, payload):
     elif response.status_code in [404, 500]:
         print(f"Error:\n Url:{URL}/{endpoint} || Payload:{payload}.\n Response:\n", response.status_code , response.json())
     else:
-        print(f"Check the request again. Something went wrong. Url:{URL}/{endpoint} || Payload:{payload}.")
+        print(f"Check the request again. Something went wrong. Url:{URL}/{endpoint} || Payload:{payload}. || Status Code: {response.status_code}")
 
     return response
 

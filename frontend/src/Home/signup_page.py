@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt, Signal
 from style import textbox_style, primary_cta_style, secondary_cta_style
 from Dashboard.dashboard import DashboardPage
 from api_requests import sign_up
+from app_state import state
 
 class SignupPage(QWidget):
     goto_dashboard_signal = Signal(QWidget)
@@ -109,14 +110,13 @@ class SignupPage(QWidget):
             self.data = self.response.json()
             if self.response.status_code == 200 and self.data['userId']:                
                 self.user_id = self.data['userId']
-
-                dashboard = DashboardPage(self.user_id, "Siddharth Sircar")
+                self.user_name = self.data['name']
+                state.user_id = self.user_id
+                state.user_name = self.user_name
+                state.is_logged_in = True
+                dashboard = DashboardPage(self.user_id, self.user_name)
                 self.goto_dashboard_signal.emit(dashboard)
 
-                # # Get the index of the next page
-                # index = self.parent().currentIndex() + 1
-                # # Show the next page
-                # self.parent().setCurrentIndex(index)
             elif self.response.status_code == 403:
                 self.error_label.setText("This email already exists. Try login.")
             else:

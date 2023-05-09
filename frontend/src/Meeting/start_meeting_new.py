@@ -5,6 +5,8 @@ from api_requests import end_meeting
 from Streaming.send_and_display_video import SendandDisplayVideo
 from Streaming.receive_stream import ReceiveStream
 import threading, constant as const
+from Meeting.socket_client import SocketClient
+from app_state import state
 
 class StartMeeting:
     def __init__(self, user_details, meeting_id) -> None:
@@ -35,10 +37,12 @@ class StartMeeting:
         thread_show_stream.start()
 
     def end_call(self):
+        state.in_meeting = False
         try:
             self.meeting_page.socket_client.close_socket()
             end_meeting(self.user_id, self.meeting_id)
             self.mainWindow.close()
+            
             print("Ending call and closing streams")
 
             # Stop sending and displaying own video

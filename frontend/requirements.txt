@@ -6,3 +6,4 @@ requests==2.29.0
 ndg-httpsclient==0.5.1
 websocket-client==1.5.1
 ffpyplayer===4.5.0
+app-state===0.5

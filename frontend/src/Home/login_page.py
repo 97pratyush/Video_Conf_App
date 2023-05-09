@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 from style import textbox_style, primary_cta_style, secondary_cta_style
 from api_requests import sign_in
 from Dashboard.dashboard import DashboardPage
+from app_state import state
 
 class LoginPage(QWidget):
     goto_dashboard_signal = Signal(QWidget)
@@ -90,9 +91,14 @@ class LoginPage(QWidget):
             if self.response.status_code == 401:
                 self.error_label.setText("Your login attempt has failed. Make sure the email and password are correct.")
             elif self.response.status_code == 200:
+                
                 self.user_id = self.data['id']
+                self.user_name = self.data['name']
+                state.user_id = self.user_id
+                state.user_name = self.user_name
+                state.is_logged_in = True
 
-                dashboard = DashboardPage(self.user_id, "Siddharth Sircar")
+                dashboard = DashboardPage(self.user_id, self.user_name)
                 self.goto_dashboard_signal.emit(dashboard)
                 # # Get the index of the next page
                 # index = self.parent().currentIndex() + 2

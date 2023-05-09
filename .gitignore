@@ -137,3 +137,4 @@ dmypy.json
 .pyre/
 >>>>>>> master
 .vscode/settings.json
+frontend/src/app_state

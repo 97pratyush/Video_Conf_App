@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from Meeting.chat import ChatScreen
 from Meeting.socket_client import SocketClient
 from constant import PARTICIPANTS_TOPIC
+from style import end_meeting_cta_style
 import time, json
 
 class MeetingPage(object):
@@ -152,12 +153,12 @@ class MeetingPage(object):
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
+        # sizePolicy.setHorizontalStretch(0)
+        # sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.end_meeting.sizePolicy().hasHeightForWidth())
         self.end_meeting.setSizePolicy(sizePolicy)
         self.end_meeting.setStyleSheet(
-            "color: rgb(255, 255, 255);\n" "background-color: rgb(170, 0, 0);"
+            end_meeting_cta_style
         )
         self.end_meeting.setObjectName("end_meeting")
         self.horizontalLayout.addWidget(self.end_meeting)
