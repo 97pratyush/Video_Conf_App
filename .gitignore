@@ -138,3 +138,4 @@ dmypy.json
 >>>>>>> master
 .vscode/settings.json
 frontend/src/app_state
+app_state
