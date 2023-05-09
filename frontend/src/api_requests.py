@@ -26,13 +26,15 @@ def sign_up(name, email, password):
     return post("createUser", payload)
 
 def create_meeting(user_id):
-    payload = {"userId": user_id}
+    payload = {"userId": int(user_id)}
+    print(payload)
     return post("createMeeting", payload)
 
 def join_meeting(user_id, meeting_id):
-    payload = {"userId": user_id, "meetingId": meeting_id}
+    payload = {"userId": int(user_id), "meetingId": int(meeting_id)}
+    print(payload)
     return post("joinMeeting", payload)
 
 def end_meeting(user_id, meeting_id):
-    payload = {"userId": user_id, "meetingId": meeting_id}
+    payload = {"userId": int(user_id), "meetingId": int(meeting_id)}
     return post("endMeeting", payload)
