@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QLineEdit, QSizePolicy
+from PySide6.QtCore import QSize
 from PySide6.QtGui import QIntValidator
 from style import primary_cta_style, textbox_style
 from api_requests import join_meeting
@@ -17,7 +18,15 @@ class JoinMeetingDialog(QDialog):
         validator = QIntValidator()
         self.meeting_id_textbox.setValidator(validator)
 
-        self.join_button = QPushButton("Join")
+        self.join_button = QPushButton("Join Meeting")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.join_button.sizePolicy().hasHeightForWidth()
+        )
+        self.join_button.setSizePolicy(sizePolicy)
+        self.join_button.setMinimumSize(QSize(110, 0))
         self.join_button.setStyleSheet(primary_cta_style)
         self.join_button.clicked.connect(self.accept)
 

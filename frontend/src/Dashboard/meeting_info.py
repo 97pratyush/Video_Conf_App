@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QSizePolicy
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
 from style import primary_cta_style
 from Meeting.start_meeting_new import StartMeeting
 
@@ -34,6 +34,14 @@ class MeetingInfoDialog(QDialog):
         )
 
         self.start_button = QPushButton("Start Meeting")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.start_button.sizePolicy().hasHeightForWidth()
+        )
+        self.start_button.setSizePolicy(sizePolicy)
+        self.start_button.setMinimumSize(QSize(110, 0))
         self.start_button.setStyleSheet(primary_cta_style)
         self.start_button.clicked.connect(self.accept)
 

@@ -10,7 +10,8 @@ from PySide6.QtWidgets import (
     QLabel,
     QSizePolicy,
     QSpacerItem,
-    QVBoxLayout
+    QVBoxLayout,
+    QListWidgetItem
 )
 from Meeting.chat import ChatScreen
 from Meeting.participants import ParticipantScreen
@@ -201,6 +202,7 @@ class MeetingPage(object):
         
         self.participants_page = ParticipantScreen()
         self.participants_page.setObjectName("Participants")
+        self.participants_page.participant_display.addItem(self.user_name)
         self.stackedWidget.addWidget(self.participants_page)
         
         self.chat_page = ChatScreen(self.user_details, self.meeting_id, self.socket_client)
@@ -211,7 +213,7 @@ class MeetingPage(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.stackedWidget.setCurrentIndex(1)
+        self.stackedWidget.setCurrentIndex(0)
         self.chat_cta.clicked.connect(self.show_chat)
         self.participants_cta.clicked.connect(self.show_participants)
         QMetaObject.connectSlotsByName(MainWindow)
@@ -226,10 +228,10 @@ class MeetingPage(object):
         self.end_meeting_cta.setText(_translate("MainWindow", "End Meeting"))
 
     def show_participants(self):
-        self.stackedWidget.setCurrentIndex(1)
+        self.stackedWidget.setCurrentIndex(0)
 
     def show_chat(self):
-        self.stackedWidget.setCurrentIndex(0)
+        self.stackedWidget.setCurrentIndex(1)
 
     def subscribeToParticpants(self):
         time.sleep(2)
@@ -264,6 +266,13 @@ class MeetingPage(object):
                         self.participants_info[id]["name"] = name
                         print("pos", len(self.participants_info)-2)
                         self.addLabel(id, len(self.participants_info)-2)
+
+                        item = QListWidgetItem(f"{name}")
+                        item.setTextAlignment(Qt.AlignLeft)                                            
+                        sizeHint = QSize(item.sizeHint().width(), item.sizeHint().height()+5)
+                        item.setSizeHint(sizeHint)
+                        self.participants_page.participant_display.addItem(item)
+
                         self.display_stream(id)
             except Exception as e:
                 print("Exception occured while adding participants :", e)
@@ -279,6 +288,7 @@ class MeetingPage(object):
                     print('id', id)
                     if not existing_ids.__contains__(id):
                         print("Participant left", id)
+                        self.participants_page.participant_display.takeItem(self.participants_page.participant_display.row(self.participants_page.participant_display.findItems(self.participants_info[id]["name"], Qt.MatchExactly)[0]))
                         self.participants_info[id]["stream"].stop()
                         self.participants_info[id]["label"].hide()
                         user_to_remove.append(id)
