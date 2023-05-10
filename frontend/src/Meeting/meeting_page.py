@@ -307,6 +307,7 @@ class MeetingPage(object):
                         self.participants_page.participant_display.takeItem(self.participants_page.participant_display.row(self.participants_page.participant_display.findItems(self.participants_info[id]["name"], Qt.MatchExactly)[0]))
                         self.participants_info[id]["stream"].stop()
                         self.participants_info[id]["label"].hide()
+                        self.participants_info[id]["nameLabel"].hide()
                         user_to_remove.append(id)
 
                 for id in user_to_remove:
@@ -353,14 +354,14 @@ class MeetingPage(object):
         video_positioon = self.positions[pos]
         
         # Participant name label
-        self.participant_name_label = QLabel(self.participants_info[id]["name"], parent=self.video_container)
+        self.participants_info[id]["nameLabel"] = QLabel(self.participants_info[id]["name"], parent=self.video_container)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.participant_name_label.sizePolicy().hasHeightForWidth()
+            self.participants_info[id]["nameLabel"].sizePolicy().hasHeightForWidth()
         )
-        self.participant_name_label.setSizePolicy(sizePolicy)
+        self.participants_info[id]["nameLabel"].setSizePolicy(sizePolicy)
 
         # Participant Video tile layout
         self.participant_video_tile_layout = QVBoxLayout()
@@ -368,7 +369,7 @@ class MeetingPage(object):
         self.participant_video_tile_layout.setSpacing(0)
         self.participant_video_tile_layout.setObjectName("video_tiles_vertical_layout")
         self.participant_video_tile_layout.addWidget(self.participants_info[id]["label"])
-        self.participant_video_tile_layout.addWidget(self.participant_name_label)
+        self.participant_video_tile_layout.addWidget(self.participants_info[id]["nameLabel"])
         self.video_tiles_layout.addLayout(self.participant_video_tile_layout, video_positioon[0], video_positioon[1], video_positioon[2], video_positioon[3])
 
         
