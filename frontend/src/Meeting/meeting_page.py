@@ -65,18 +65,35 @@ class MeetingPage(object):
 
         self.video_tiles_layout = QGridLayout(self.video_container)
         self.video_tiles_layout.setContentsMargins(0, 0, 0, 0)
+        self.meeting_layout.setSpacing(0)
         self.video_tiles_layout.setObjectName("gridLayout")
         
         # Video Display labels
-        self.self_video = QLabel(parent=self.video_container)
+        self.self_video = QLabel(f"{self.user_name}", parent=self.video_container)
         self.self_video.setStyleSheet(
             "color: rgb(255, 255, 255);"
         )
         self.self_video.setScaledContents(True)
         self.self_video.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.self_video.setObjectName("self")
-        self.video_tiles_layout.addWidget(self.self_video, 0, 0, 1, 1)
+        # self.video_tiles_layout.addWidget(self.self_video, 0, 0, 1, 1)
         self.participants_info[str(self.user_id)] = {'label': self.self_video, 'name': self.user_name}
+        self.self_name_label = QLabel(f"{self.user_name}", parent=self.video_container)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.self_name_label.sizePolicy().hasHeightForWidth()
+        )
+        self.self_name_label.setSizePolicy(sizePolicy)
+
+        self.participant_video_tile_layout = QVBoxLayout()
+        self.participant_video_tile_layout.setContentsMargins(0, 0, 0, 0)
+        self.participant_video_tile_layout.setSpacing(0)
+        self.participant_video_tile_layout.setObjectName("video_tiles_vertical_layout")
+        self.participant_video_tile_layout.addWidget(self.self_video)
+        self.participant_video_tile_layout.addWidget(self.self_name_label)
+        self.video_tiles_layout.addLayout(self.participant_video_tile_layout, 0, 0, 1, 1)
         
         self.control_container = QWidget(parent=self.centralwidget)
         self.control_container.setGeometry(QRect(0, 620, 961, 71))
@@ -235,12 +252,14 @@ class MeetingPage(object):
 
     def subscribeToParticpants(self):
         time.sleep(2)
-        if self.socket_client.get_connection_state():
-            print("Connected to participants list")
-            subscriptionInfo = {"type": f'{PARTICIPANTS_TOPIC}'}
-            self.socket_client.send_message(subscriptionInfo)
-        else:
-            print("Not connected to participants list")
+        try:
+            if self.socket_client.get_connection_state():
+                subscriptionInfo = {"type": f'{PARTICIPANTS_TOPIC}'}
+                self.socket_client.send_message(subscriptionInfo)
+            else:
+                print("Not connected to participants list")
+        except Exception as e:
+            print(e)
         
     def receive_participants(self, data):
         try:
@@ -252,8 +271,8 @@ class MeetingPage(object):
 
     def check_updated_participants(self, participant_list):
         
-            print("Checking updated participants", participant_list)
-            print("Participant info", self.participants_info)
+            # print("Checking updated participants", participant_list)
+            # print("Participant info", self.participants_info)
             try:
                 # Add new participants
                 for data in participant_list:
@@ -261,10 +280,10 @@ class MeetingPage(object):
                     id = participant["id"]
                     name = participant["name"]
                     if not self.participants_info.keys().__contains__(id):
-                        print("New participant found", id, name)
+                        # print("New participant found", id, name)
                         self.participants_info[id] = {}
                         self.participants_info[id]["name"] = name
-                        print("pos", len(self.participants_info)-2)
+                        # print("pos", len(self.participants_info)-2)
                         self.addLabel(id, len(self.participants_info)-2)
 
                         item = QListWidgetItem(f"{name}")
@@ -279,20 +298,18 @@ class MeetingPage(object):
 
             # Remove participants
             try:
-                print('here1')
                 existing_ids = self.getParticipantIds(participant_list)
                 user_to_remove = []
-                print('existing_ids', existing_ids)
-                print('self.participants_info.keys()', self.participants_info.keys())
+                # print('existing_ids', existing_ids)
+                # print('self.participants_info.keys()', self.participants_info.keys())
                 for id in self.participants_info.keys():
-                    print('id', id)
+                    # print('id', id)
                     if not existing_ids.__contains__(id):
-                        print("Participant left", id)
+                        # print("Participant left", id)
                         self.participants_page.participant_display.takeItem(self.participants_page.participant_display.row(self.participants_page.participant_display.findItems(self.participants_info[id]["name"], Qt.MatchExactly)[0]))
                         self.participants_info[id]["stream"].stop()
                         self.participants_info[id]["label"].hide()
                         user_to_remove.append(id)
-                print('here2')
 
                 for id in user_to_remove:
                     self.participants_info.pop(id)
@@ -326,6 +343,8 @@ class MeetingPage(object):
         
 
     def addLabel(self, id, pos):
+
+        # Participant video label
         self.participants_info[id]["label"] = QLabel(self.participants_info[id]["name"], parent=self.video_container)
         self.participants_info[id]["label"].setStyleSheet(
             "color: rgb(255, 255, 255);"
@@ -334,6 +353,24 @@ class MeetingPage(object):
         self.participants_info[id]["label"].setObjectName(self.participants_info[id]["name"])
         self.participants_info[id]["label"].setAlignment(Qt.AlignmentFlag.AlignCenter)
         video_positioon = self.positions[pos]
-        self.video_tiles_layout.addWidget(self.participants_info[id]["label"], video_positioon[0], video_positioon[1], video_positioon[2], video_positioon[3])
+        
+        # Participant name label
+        self.participant_name_label = QLabel(self.participants_info[id]["name"], parent=self.video_container)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.participant_name_label.sizePolicy().hasHeightForWidth()
+        )
+        self.participant_name_label.setSizePolicy(sizePolicy)
+
+        # Participant Video tile layout
+        self.participant_video_tile_layout = QVBoxLayout()
+        self.participant_video_tile_layout.setContentsMargins(0, 0, 0, 0)
+        self.participant_video_tile_layout.setSpacing(0)
+        self.participant_video_tile_layout.setObjectName("video_tiles_vertical_layout")
+        self.participant_video_tile_layout.addWidget(self.participants_info[id]["label"])
+        self.participant_video_tile_layout.addWidget(self.participant_name_label)
+        self.video_tiles_layout.addLayout(self.participant_video_tile_layout, video_positioon[0], video_positioon[1], video_positioon[2], video_positioon[3])
 
         
