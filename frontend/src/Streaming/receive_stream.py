@@ -6,16 +6,17 @@ import cv2, qimage2ndarray, numpy, time, constant as const
 
 class ReceiveStream(QThread):
 
-    participant_frame_changed = Signal(object)
+    participant_frame_changed = Signal(object, str)
 
-    def __init__(self, url):
+    def __init__(self, url, id):
         super().__init__()
         self.url = url
+        self.id = id
 
     def run(self):
         self._running = True
         player = MediaPlayer(self.url)
-
+        time.sleep(2)
         while(self._running):
             frame, val = player.get_frame()
             if val != "eof" and frame is not None:
@@ -25,7 +26,7 @@ class ReceiveStream(QThread):
                 frame_data = cv2.flip(frame_data, 1)
                 image = qimage2ndarray.array2qimage(frame_data)
                 pixmap = QPixmap.fromImage(image)
-                self.participant_frame_changed.emit(pixmap)
+                self.participant_frame_changed.emit(pixmap, self.id)
             elif frame is None:
                 time.sleep(0.01)
 

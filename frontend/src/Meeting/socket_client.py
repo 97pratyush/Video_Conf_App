@@ -52,8 +52,8 @@ class SocketClient(QObject):
         print("### closed ###", close_status_code, close_msg)
 
     def receive_messages(self, ws, data):
-        print(type(data))
-        print(data)
+        # print(type(data))
+        # print(data)
         try:
             data = json.loads(data)
             self.message_received.emit(data)
