@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="Icons">
+    <file>DashboardIcons/log-out.svg</file>
+    <file>DashboardIcons/user.svg</file>
+  </qresource>
+</RCC>
