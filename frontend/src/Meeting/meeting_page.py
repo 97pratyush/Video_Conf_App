@@ -257,7 +257,8 @@ class MeetingPage(object):
                         print("New participant found", id, name)
                         self.participants_info[id] = {}
                         self.participants_info[id]["name"] = name
-                        self.addLabel(id)
+                        print("pos", len(self.participants_info)-2)
+                        self.addLabel(id, len(self.participants_info)-2)
                         self.display_stream(id)
             except Exception as e:
                 print("Exception occured while adding participants :", e)
@@ -291,8 +292,6 @@ class MeetingPage(object):
             participant = json.loads(data)
             participantIds.append(participant["id"])
         return participantIds
-        
-    
 
     def display_stream(self, user_id):
         try:
@@ -311,14 +310,14 @@ class MeetingPage(object):
         self.participants_info[id]["label"].setPixmap(pixmap)
         
 
-    def addLabel(self, id):
+    def addLabel(self, id, pos):
         self.participants_info[id]["label"] = QLabel(parent=self.video_container)
         self.participants_info[id]["label"].setStyleSheet(
             "color: rgb(255, 255, 255);"
         )
         self.participants_info[id]["label"].setScaledContents(True)
         self.participants_info[id]["label"].setAlignment(Qt.AlignmentFlag.AlignCenter)
-        video_positioon = self.positions[len(self.participants_info)-2]
+        video_positioon = self.positions[pos]
         self.gridLayout.addWidget(self.participants_info[id]["label"], video_positioon[0], video_positioon[1], video_positioon[2], video_positioon[3])
 
         
