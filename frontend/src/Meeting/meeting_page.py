@@ -26,7 +26,7 @@ from constant import *
 from style import end_meeting_cta_style
 from ffpyplayer.player import MediaPlayer
 from Streaming.receive_stream import ReceiveStream
-import time
+import time, json
 
 user_stream_player : MediaPlayer = None
 
@@ -36,7 +36,9 @@ class MeetingPage(object):
         self.user_id = user_details['id']
         self.user_name = user_details['name']
         self.meeting_id = int(meeting_id)
-
+        self.participants_info = dict()
+        self.positions = [[0, 1, 1, 1], [1, 0, 1, 1], [1, 1, 1, 1]]
+    
         self.socket_client = SocketClient(meeting_id, user_details['id'], user_details['name'])
         self.socket_client.message_received.connect(self.receive_participants)
         self.subscribeToParticpants()
@@ -82,8 +84,8 @@ class MeetingPage(object):
         self.self_video.setScaledContents(True)
         self.self_video.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.self_video.setObjectName("self")
-        self.gridLayout.addWidget(self.self_video, 0, 0, 2, 1)
-        
+        self.gridLayout.addWidget(self.self_video, 0, 0, 1, 1)
+        self.participants_info[str(self.user_id)] = {'label': self.self_video, 'name': self.user_name}
         # self.participant_1 = QLabel(parent=self.video_container)
         # self.participant_1.setStyleSheet(
         #     # "border-color: rgb(255, 255, 255);\n" 
@@ -224,15 +226,6 @@ class MeetingPage(object):
     def show_chat(self):
         self.stackedWidget.setCurrentIndex(0)
 
-    def receive_participants(self, data):
-        try:
-            if data["type"] == "participantListUpdated":
-                print(f"participantListUpdated: \n{data.json()}")
-            elif data["type"] == "newChatMessage":
-                self.addNewChatMessage(data["sender"], data["message"])
-        except Exception as e:
-            print(e)
-
     def subscribeToParticpants(self):
         time.sleep(2)
         if self.socket_client.get_connection_state():
@@ -251,23 +244,81 @@ class MeetingPage(object):
             print(e)
 
     def check_updated_participants(self, participant_list):
-        try:
-            # Filter new participant and send user id to display their stream
-            self.display_stream('7')
-        except Exception as e:
-            print("Exception occured while receiving stream :", e)
-        # self.start_participant_stream(self.participant_1, self.meeting_id, '7')
+        
+            print("Checking updated participants", participant_list)
+            print("Participant info", self.participants_info)
+            try:
+                # Add new participants
+                for data in participant_list:
+                    participant = json.loads(data)
+                    id = participant["id"]
+                    name = participant["name"]
+                    if not self.participants_info.keys().__contains__(id):
+                        print("New participant found", id, name)
+                        self.participants_info[id] = {}
+                        self.participants_info[id]["name"] = name
+                        self.addLabel(id)
+                        self.display_stream(id)
+            except Exception as e:
+                print("Exception occured while adding participants :", e)
+
+            # Remove participants
+            try:
+                print('here1')
+                existing_ids = self.getParticipantIds(participant_list)
+                user_to_remove = []
+                print('existing_ids', existing_ids)
+                print('self.participants_info.keys()', self.participants_info.keys())
+                for id in self.participants_info.keys():
+                    print('id', id)
+                    if not existing_ids.__contains__(id):
+                        print("Participant left", id)
+                        self.participants_info[id]["stream"].stop()
+                        self.participants_info[id]["label"].hide()
+                        user_to_remove.append(id)
+                print('here2')
+
+                for id in user_to_remove:
+                    self.participants_info.pop(id)
+
+            except Exception as e:
+                print("Exception occured while removing participants :", e)
+
+    
+    def getParticipantIds(self, participantList):
+        participantIds = []
+        for data in participantList:
+            participant = json.loads(data)
+            participantIds.append(participant["id"])
+        return participantIds
+        
+    
 
     def display_stream(self, user_id):
         try:
             url = f'{RTMP_URL}/{self.meeting_id}_{user_id}'
-            self.thread_show_stream = ReceiveStream(url)
-            self.thread_show_stream.participant_frame_changed.connect(self.on_frame_changed)
-            self.thread_show_stream.start()
+            self.participants_info[user_id]["stream"] = ReceiveStream(url, user_id)
+            self.participants_info[user_id]["stream"].participant_frame_changed.connect(self.on_frame_changed)
+            self.participants_info[user_id]["stream"].start()
 
         except Exception as e:
             print("Exception occured while receiving stream :", e)
 
-    def on_frame_changed(self, pixmap):
-        # Change label for each participant
-        self.participant_1.setPixmap(pixmap)
+    def on_frame_changed(self, pixmap, id):
+        # print("pixmap",pixmap)
+        # print("id",id)
+        # # Change label for each participant
+        self.participants_info[id]["label"].setPixmap(pixmap)
+        
+
+    def addLabel(self, id):
+        self.participants_info[id]["label"] = QLabel(parent=self.video_container)
+        self.participants_info[id]["label"].setStyleSheet(
+            "color: rgb(255, 255, 255);"
+        )
+        self.participants_info[id]["label"].setScaledContents(True)
+        self.participants_info[id]["label"].setAlignment(Qt.AlignmentFlag.AlignCenter)
+        video_positioon = self.positions[len(self.participants_info)-2]
+        self.gridLayout.addWidget(self.participants_info[id]["label"], video_positioon[0], video_positioon[1], video_positioon[2], video_positioon[3])
+
+        
