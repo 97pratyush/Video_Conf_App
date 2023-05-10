@@ -57,4 +57,5 @@ class DashboardPage(QWidget):
     @on('state.in_meeting')
     def on_meeting_status_change(self):
         print(f"Is user in meeting: {state.in_meeting}")
+        self.create_meeting_cta.setDisabled(state.in_meeting)
         self.join_meeting_cta.setDisabled(state.in_meeting)
