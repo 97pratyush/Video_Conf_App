@@ -23,8 +23,6 @@ from Streaming.receive_stream import ReceiveStream
 import time, json
 import Meeting.resources
 
-user_stream_player : MediaPlayer = None
-
 class MeetingPage(object):
     def __init__(self, user_details, meeting_id) -> None:
         self.user_details = user_details

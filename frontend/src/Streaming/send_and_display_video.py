@@ -67,21 +67,22 @@ class SendandDisplayVideo(QThread):
                     max_tries += 1
                     if (max_tries >= const.MAX_TRIES and (time.time() - start_time) >= const.MAX_WAIT_TIME_FOR_SERVER): # Wait a maximum of wait time defined or max tries
                         print("Frames not being sent after", const.MAX_TRIES, "tries. Closing operation")
+                        # if self.send_process_opencv.stdin:
+                        #     self.send_process_opencv.stdin.close()
+                        if self.send_process_opencv:
+                            self.send_process_opencv.terminate()
                         if self.capture:
                             self.capture.release()
-                        if self.send_process_opencv.stdin:
-                            self.send_process_opencv.stdin.flush()
-                            self.send_process_opencv.stdin.close()
-                        self.send_process_opencv.terminate()
                         return
         except Exception as e:
             print("Exception occured while sending video via opencv :", e)
         finally:
+            # if self.send_process_opencv.stdin:
+            #     self.send_process_opencv.stdin.close()
+            if self.send_process_opencv:
+                self.send_process_opencv.terminate()
             if self.capture:
                 self.capture.release()
-            if self.send_process_opencv.stdin:
-                self.send_process_opencv.stdin.close()
-            self.send_process_opencv.terminate()
 
     def display_video_frame(self, frame):
         # Convert the frame from BGR to RGB
@@ -97,7 +98,7 @@ class SendandDisplayVideo(QThread):
 
     def stop(self):
         self.close_called = True
-        if self.capture:
-            self.capture.release()
         if self.send_process_opencv:
             self.send_process_opencv.terminate()
+        if self.capture:
+            self.capture.release()
