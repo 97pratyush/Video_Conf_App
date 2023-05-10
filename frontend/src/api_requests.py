@@ -9,7 +9,7 @@ def post(endpoint, payload):
     )
 
     if response.status_code in [200, 201, 401, 403]:
-        print(response.json())
+        print(f"{response.status_code}:{response.json()}")
     elif response.status_code in [404, 500]:
         print(f"Error:\n Url:{URL}/{endpoint} || Payload:{payload}.\n Response:\n", response.status_code , response.json())
     else:

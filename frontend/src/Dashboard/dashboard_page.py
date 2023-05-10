@@ -11,30 +11,29 @@ from PySide6.QtWidgets import (
     QSpacerItem,
 )
 from PySide6.QtCore import Qt, QSize, QMetaObject, QCoreApplication
+from Dashboard.join_meeting import JoinMeetingDialog
+from Dashboard.meeting_info import MeetingInfoDialog
+from api_requests import create_meeting
+from app_state import state, on
+from style import create_meeting_cta_style, join_meeting_cta_style
+import Dashboard.resources
 
-from style import primary_cta_style, secondary_cta_style
-import DashboardIcons
+class DashboardPage(QWidget):
+    def __init__(self, user_id, name, parent=None):
+        super(DashboardPage, self).__init__(parent)
 
+        self.user_details = {"id": user_id, "name": name}
 
-class DashboardPage(object):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.setWindowModality(Qt.WindowModality.NonModal)
-        MainWindow.resize(800, 600)
-        MainWindow.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        MainWindow.setStyleSheet(
-            "background-color: rgb(255, 255, 255);\n" "color: rgb(0, 0, 0);"
-        )
-        self.centralwidget = QWidget(parent=MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.horizontalLayout = QHBoxLayout(self.centralwidget)
+        self.horizontalLayout = QHBoxLayout(self)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName("horizontalLayout")
+        
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setContentsMargins(10, 10, 10, 10)
         self.verticalLayout.setSpacing(10)
         self.verticalLayout.setObjectName("verticalLayout")
+        
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setContentsMargins(10, 10, 10, 10)
         self.horizontalLayout_2.setSpacing(10)
@@ -43,7 +42,8 @@ class DashboardPage(object):
             40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
         self.horizontalLayout_2.addItem(spacerItem)
-        self.user_icon_cta = QPushButton(parent=self.centralwidget)
+        
+        self.user_icon_cta = QPushButton(parent=self)
         self.user_icon_cta.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(
@@ -51,30 +51,34 @@ class DashboardPage(object):
             QtGui.QIcon.Mode.Normal,
             QtGui.QIcon.State.Off,
         )
+        self.user_icon_cta.clicked.connect(self.change_user_menu_visibility)
         self.user_icon_cta.setIcon(icon)
-        self.user_icon_cta.setIconSize(QSize(30, 30))
+        self.user_icon_cta.setIconSize(QSize(50, 50))
         self.user_icon_cta.setFlat(True)
-        self.user_icon_cta.setObjectName("pushButton_3")
+        self.user_icon_cta.setObjectName("user_icon_cta")
         self.horizontalLayout_2.addWidget(self.user_icon_cta)
+        
         self.verticalLayout.addLayout(self.horizontalLayout_2)
         spacerItem1 = QSpacerItem(
             20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
         )
         self.verticalLayout.addItem(spacerItem1)
-        self.label = QLabel(parent=self.centralwidget)
+        
+        self.welcome_label = QLabel(f"Welcome, {self.user_details['name']}", parent=self)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy)
-        self.label.setMinimumSize(QSize(0, 200))
+        sizePolicy.setHeightForWidth(self.welcome_label.sizePolicy().hasHeightForWidth())
+        self.welcome_label.setSizePolicy(sizePolicy)
+        self.welcome_label.setMinimumSize(QSize(0, 200))
         font = QtGui.QFont()
         font.setPointSize(20)
-        font.setBold(True)
-        self.label.setFont(font)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setObjectName("label")
-        self.verticalLayout.addWidget(self.label)
+        font.setBold(False)
+        self.welcome_label.setFont(font)
+        self.welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.welcome_label.setObjectName("label")
+        self.verticalLayout.addWidget(self.welcome_label)
+        
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         spacerItem2 = QSpacerItem(
@@ -85,9 +89,11 @@ class DashboardPage(object):
         self.verticalLayout_3.setContentsMargins(10, 10, 10, 10)
         self.verticalLayout_3.setSpacing(10)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.create_meeting_cta = QPushButton(parent=self.centralwidget)
-        self.create_meeting_cta.setStyleSheet(primary_cta_style)
+        
+        self.create_meeting_cta = QPushButton("Create a meeting", parent=self)
+        self.create_meeting_cta.setStyleSheet(create_meeting_cta_style)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.create_meeting_cta.clicked.connect(self.start_meeting)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
@@ -104,8 +110,10 @@ class DashboardPage(object):
         )
         self.create_meeting_cta.setObjectName("pushButton")
         self.verticalLayout_3.addWidget(self.create_meeting_cta)
-        self.join_meeting_cta = QPushButton(parent=self.centralwidget)
-        self.join_meeting_cta.setStyleSheet(secondary_cta_style)
+        
+        self.join_meeting_cta = QPushButton("Join meeting", parent=self)
+        self.join_meeting_cta.clicked.connect(self.join_meeting)
+        self.join_meeting_cta.setStyleSheet(join_meeting_cta_style)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -121,6 +129,7 @@ class DashboardPage(object):
         self.join_meeting_cta.setObjectName("pushButton_2")
         self.verticalLayout_3.addWidget(self.join_meeting_cta)
         self.horizontalLayout_3.addLayout(self.verticalLayout_3)
+        
         spacerItem3 = QSpacerItem(
             100, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
@@ -131,7 +140,8 @@ class DashboardPage(object):
         )
         self.verticalLayout.addItem(spacerItem4)
         self.horizontalLayout.addLayout(self.verticalLayout)
-        self.user_menu_container = QWidget(parent=self.centralwidget)
+        
+        self.user_menu_container = QWidget(parent=self)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -142,35 +152,41 @@ class DashboardPage(object):
         self.user_menu_container.setMinimumSize(QSize(200, 0))
         self.user_menu_container.setStyleSheet("background-color: rgb(240, 240, 240);")
         self.user_menu_container.setObjectName("user_menu_container")
+        state.is_user_menu_visible = False
         self.verticalLayout_4 = QVBoxLayout(self.user_menu_container)
         self.verticalLayout_4.setContentsMargins(10, 10, 10, 10)
         self.verticalLayout_4.setSpacing(10)
         self.verticalLayout_4.setObjectName("verticalLayout_4")
+        
         spacerItem5 = QSpacerItem(
             20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
         )
         self.verticalLayout_4.addItem(spacerItem5)
-        self.user_name_label = QLabel(parent=self.user_menu_container)
+        
+        self.user_name_label = QLabel(f"{self.user_details['name']}", parent=self.user_menu_container)
         font = QtGui.QFont()
         font.setPointSize(15)
-        font.setBold(True)
+        font.setBold(False)
         self.user_name_label.setFont(font)
         self.user_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.user_name_label.setObjectName("label_2")
         self.verticalLayout_4.addWidget(self.user_name_label)
+        
         spacerItem6 = QSpacerItem(
             20, 470, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
         )
         self.verticalLayout_4.addItem(spacerItem6)
-        self.logout_cta = QPushButton(parent=self.user_menu_container)
+        
+        self.logout_cta = QPushButton("Logout", parent=self.user_menu_container)
+        self.logout_cta.clicked.connect(lambda: state.update(is_logged_in=False))
         font = QtGui.QFont()
         font.setPointSize(12)
-        font.setBold(True)
+        font.setBold(False)
         self.logout_cta.setFont(font)
         icon1 = QtGui.QIcon()
-        icons = DashboardIcons
+        
         icon1.addPixmap(
-            QtGui.QPixmap(f"{icons}:log-out.svg"),
+            QtGui.QPixmap(":/Icons/DashboardIcons/log-out.svg"),
             QtGui.QIcon.Mode.Normal,
             QtGui.QIcon.State.Off,
         )
@@ -180,20 +196,33 @@ class DashboardPage(object):
         self.logout_cta.setObjectName("pushButton_4")
         self.verticalLayout_4.addWidget(self.logout_cta)
         self.horizontalLayout.addWidget(self.user_menu_container)
-        MainWindow.setCentralWidget(self.centralwidget)
 
-        self.retranslateUi(MainWindow)
-        QMetaObject.connectSlotsByName(MainWindow)
+    def change_user_menu_visibility(self):
+        state.is_user_menu_visible = not state.is_user_menu_visible
 
-    def retranslateUi(self, MainWindow):
-        _translate = QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.label.setText(_translate("MainWindow", "Welcome, User_Name"))
-        self.create_meeting_cta.setText(_translate("MainWindow", "Create a meeting"))
-        self.join_meeting_cta.setText(_translate("MainWindow", "Join meeting"))
-        self.user_name_label.setText(_translate("MainWindow", "User_Name"))
-        self.logout_cta.setText(_translate("MainWindow", "Log Out"))
+    @on('state.is_user_menu_visible')
+    def on_user_menu_visibility_change(self):
+        self.user_menu_container.setVisible(state.is_user_menu_visible)
 
+    def start_meeting(self):
+        response = create_meeting(self.user_details['id'])
+        
+        if response.status_code == 200:
+            state.in_meeting = True
+            meeting_id = response.json()['meetingId']
+            print("Meeting Id: ", meeting_id)
+            self.meeting_dialog = MeetingInfoDialog(self.user_details, meeting_id)
+            self.meeting_dialog.show()
+
+    def join_meeting(self):
+        self.join_meeting_dialog = JoinMeetingDialog(self.user_details)
+        self.join_meeting_dialog.show()
+
+    @on('state.in_meeting')
+    def on_meeting_status_change(self):
+        print(f"Is user in meeting: {state.in_meeting}")
+        self.create_meeting_cta.setDisabled(state.in_meeting)
+        self.join_meeting_cta.setDisabled(state.in_meeting)
 
 if __name__ == "__main__":
     import sys

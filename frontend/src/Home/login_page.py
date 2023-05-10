@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 )
 from style import textbox_style, primary_cta_style, secondary_cta_style
 from api_requests import sign_in
-from Dashboard.dashboard import DashboardPage
+from Dashboard.dashboard_page import DashboardPage
 from app_state import state
 
 class LoginPage(QWidget):
@@ -75,6 +75,9 @@ class LoginPage(QWidget):
         self.setLayout(self.layout)
 
     def navigate_signup(self):
+        self.email_textbox.setText("")
+        self.password_textbox.setText("")
+        self.error_label.setText("")
         # Get the index of the next page
         index = self.parent().currentIndex() + 1
         # Show the next page
@@ -97,6 +100,10 @@ class LoginPage(QWidget):
                 state.user_id = self.user_id
                 state.user_name = self.user_name
                 state.is_logged_in = True
+                
+                self.email_textbox.setText("")
+                self.password_textbox.setText("")
+                self.error_label.setText("")
 
                 dashboard = DashboardPage(self.user_id, self.user_name)
                 self.goto_dashboard_signal.emit(dashboard)

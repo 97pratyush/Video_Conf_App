@@ -29,6 +29,35 @@ primary_cta_style = (
     "}"
 )
 
+create_meeting_cta_style = (
+    "QPushButton"
+    "{"
+    "background-color : #3477eb;"
+    "color : white;"
+    "font-weight : bold;"
+    "padding: 10px;"
+    "border-radius : 5px;"
+    "}"
+)
+join_meeting_cta_style = (
+    "QPushButton"
+    "{"
+    "background-color : white;"
+    "color : #3477eb;"
+    "font-weight : bold;"
+    "}"
+    "QPushButton::hover"
+    "{"
+    "background-color : white;"
+    "color : #3477eb;"
+    "font-weight : bold;"
+    "border-radius : 5px;"
+    "border-style : solid;"
+    "border-width : 0.5px;"
+    "border-color : black;"
+    "}"
+)
+
 secondary_cta_style = (
     "QPushButton"
     "{"
@@ -42,7 +71,7 @@ secondary_cta_style = (
     "margin-right : 100px;"
     "padding: 10px;"
     "border-radius : 5px;"
-    "border-style : solid;"
+    "border-style : none;"
     "border-width : 0.2px;"
     "border-color : black;"
     "}"

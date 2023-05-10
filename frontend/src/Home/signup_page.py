@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 from style import textbox_style, primary_cta_style, secondary_cta_style
-from Dashboard.dashboard import DashboardPage
+from Dashboard.dashboard_page import DashboardPage
 from api_requests import sign_up
 from app_state import state
 
@@ -88,6 +88,7 @@ class SignupPage(QWidget):
             self.name_textbox,
             self.email_textbox,
             self.password_textbox,
+            self.error_label,
             self.signup_button,
             self.login_label,
             self.signin_button,
@@ -104,16 +105,23 @@ class SignupPage(QWidget):
         self.email = self.email_textbox.text().strip()
         self.password = self.password_textbox.text().strip()
 
-        if self.email and self.password and self.name:
+        if self.email and self.password and self.name:            
             self.response = sign_up(self.name, self.email, self.password)
             # print(self.response['message'])
             self.data = self.response.json()
-            if self.response.status_code == 200 and self.data['userId']:                
+            if self.response.status_code == 200 and self.data['userId']:
+
                 self.user_id = self.data['userId']
                 self.user_name = self.data['name']
                 state.user_id = self.user_id
                 state.user_name = self.user_name
                 state.is_logged_in = True
+
+                self.error_label.setText("")
+                self.name_textbox.setText("")
+                self.email_textbox.setText("")
+                self.password_textbox.setText("")
+
                 dashboard = DashboardPage(self.user_id, self.user_name)
                 self.goto_dashboard_signal.emit(dashboard)
 
@@ -125,6 +133,11 @@ class SignupPage(QWidget):
             self.error_label.setText("Please enter all details.")
     
     def navigate_to_signin(self):
+        self.error_label.setText("")
+        self.name_textbox.setText("")
+        self.email_textbox.setText("")
+        self.password_textbox.setText("")
+
         # Get the index of the next page
         index = self.parent().currentIndex() - 1
         # Show the next page

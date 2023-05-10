@@ -2,22 +2,21 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QWidget
 from PySide6.QtCore import Slot
 from Home.login_page import LoginPage
 from Home.signup_page import SignupPage
-from Dashboard.dashboard import DashboardPage
-from app_state import state
+from Dashboard.dashboard_page import DashboardPage
+from app_state import state, on
 import sys
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
-        self.parent_widget = QStackedWidget()
-        state.autopersist('app_state')
+        self.parent_widget = QStackedWidget()        
         self.login_page = LoginPage()
         self.login_page.goto_dashboard_signal.connect(self.add_to_stacked_widget)
         self.sign_up_page = SignupPage()
         self.sign_up_page.goto_dashboard_signal.connect(self.add_to_stacked_widget)
         self.parent_widget.addWidget(self.login_page)
         self.parent_widget.addWidget(self.sign_up_page)
-
+        state.autopersist('app_state')
         if "is_logged_in" not in state:
             state.is_logged_in = False
 
@@ -38,6 +37,13 @@ class MainWindow(QMainWindow):
     def navigate(self, obj):
         self.setCentralWidget(obj)
 
+    @on('state.is_logged_in')
+    def on_logout(self):
+        if state.is_logged_in == False:
+            state.user_id = ""
+            state.user_name = ""
+            self.parent_widget.setCurrentWidget(self.login_page)
+
     @Slot(QWidget)
     def add_to_stacked_widget(self, widget):
         self.parent_widget.addWidget(widget)
@@ -48,7 +54,7 @@ if __name__ == "__main__":
 
     home = MainWindow()
     home.setWindowTitle("Cloud Meetings")
-    home.resize(650, 450)
+    home.setFixedSize(650, 450)
     home.setAutoFillBackground(True)
     home.setStyleSheet("QMainWindow" "{" "background : white;" "}")
     home.show()
