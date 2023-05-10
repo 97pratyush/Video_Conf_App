@@ -105,9 +105,6 @@ class DashboardPage(QWidget):
         font.setPointSize(12)
         font.setBold(True)
         self.create_meeting_cta.setFont(font)
-        self.create_meeting_cta.setStyleSheet(
-            "background-color: rgb(0, 66, 197);\n" "color: rgb(255, 255, 255);"
-        )
         self.create_meeting_cta.setObjectName("pushButton")
         self.verticalLayout_3.addWidget(self.create_meeting_cta)
         

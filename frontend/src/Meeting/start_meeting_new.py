@@ -18,7 +18,7 @@ class StartMeeting:
         self.meeting_page = MeetingPage(self.user_details, self.meeting_id)
         self.mainWindow = QMainWindow()
         self.meeting_page.setupUi(self.mainWindow)
-        self.meeting_page.end_meeting.clicked.connect(self.end_call)
+        self.meeting_page.end_meeting_cta.clicked.connect(self.end_call)
         
         self.thread_send_stream = SendandDisplayVideo(self.meeting_page.self_video, self.meeting_id, self.user_id)
         

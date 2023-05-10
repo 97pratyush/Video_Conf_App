@@ -1,17 +1,16 @@
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, QRect, QCoreApplication, QMetaObject, QSize
 from PySide6.QtWidgets import (
     QWidget,
-    QGridLayout,
-    QLayout,
-    QStackedWidget,
-    QHBoxLayout,
-    QPushButton,
     QLabel,
+    QLayout,
+    QPushButton,
+    QHBoxLayout,
     QSizePolicy,
     QSpacerItem,
-    QVBoxLayout
+    QGridLayout,
+    QStackedWidget,
 )
+from PySide6.QtCore import Qt, QSize, QMetaObject, QCoreApplication, QRect
 from Meeting.chat import ChatScreen
 from Meeting.participants import ParticipantScreen
 from Meeting.socket_client import SocketClient
@@ -36,7 +35,7 @@ class MeetingPage(object):
         self.socket_client = SocketClient(meeting_id, user_details['id'], user_details['name'])
         self.socket_client.message_received.connect(self.receive_participants)
         self.subscribeToParticpants()
-        
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1191, 691)        
@@ -45,51 +44,71 @@ class MeetingPage(object):
         )
         self.centralwidget = QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-
-        self.vertical_layout = QVBoxLayout()
-        self.vertical_layout.setContentsMargins(0, 0, 0, 0)
-        self.vertical_layout.setSpacing(0)
-        self.vertical_layout.setObjectName("verticalLayout")
-
-
+        
         self.meeting_layout = QHBoxLayout(self.centralwidget)
         self.meeting_layout.setContentsMargins(0, 0, 0, 0)
         self.meeting_layout.setSpacing(0)
         self.meeting_layout.setObjectName("horizontalLayout")
-        
-        self.video_container = QWidget(self.centralwidget)
-        self.video_container.setStyleSheet("")
+
+        self.video_container = QWidget(parent=self.centralwidget)
+        # self.video_container.setGeometry(QRect(0, 0, 951, 621))
+        self.video_container.setStyleSheet("background-color: blue;")
         self.video_container.setObjectName("video_container")
-        self.meeting_layout.addWidget(self.video_container)
 
         self.video_tiles_layout = QGridLayout(self.video_container)
         self.video_tiles_layout.setContentsMargins(0, 0, 0, 0)
-        self.video_tiles_layout.setObjectName("gridLayout")
-        
-        # Video Display labels
+        self.video_tiles_layout.setObjectName("video_tiles_layout")
+
+        ########################## Video Labels ##########################
         self.self_video = QLabel(parent=self.video_container)
-        self.self_video.setStyleSheet(
-            "color: rgb(255, 255, 255);"
-        )
         self.self_video.setScaledContents(True)
         self.self_video.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.self_video.setObjectName("self")
-        self.video_tiles_layout.addWidget(self.self_video, 0, 0, 1, 1)
-        self.participants_info[str(self.user_id)] = {'label': self.self_video, 'name': self.user_name}
-        
-        self.control_container = QWidget(parent=self.centralwidget)
-        self.control_container.setGeometry(QRect(0, 620, 961, 71))
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
+        self.self_video.setObjectName("self_video")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.control_container.sizePolicy().hasHeightForWidth()
-        )
-        self.control_container.setSizePolicy(sizePolicy)
-        self.control_container.setStyleSheet("")
-        self.control_container.setObjectName("control_container")
+            self.self_video.sizePolicy().hasHeightForWidth()
+        )                                    
+        self.video_tiles_layout.addWidget(self.self_video)
+        self.participants_info[str(self.user_id)] = {'label': self.self_video, 'name': self.user_name}
         
-        self.button_control_layout = QHBoxLayout(self.control_container)
+        # self.label_5 = QLabel("Label 2",parent=self.centralwidget)
+        # self.label_5.setScaledContents(False)
+        # self.label_5.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.label_5.setObjectName("label_5")
+        # self.label_5.setStyleSheet(
+        #     "border-color: rgb(255, 255, 255);\n" 
+        #     "background-color: rgb(255, 255, 255);"
+        # )
+        # self.video_tiles_layout.addWidget(self.label_5, 0, 1, 1, 1)
+
+        # self.label_6 = QLabel(parent=self.centralwidget)
+        # self.label_6.setScaledContents(False)
+        # self.label_6.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.label_6.setObjectName("label_6")
+        # self.video_tiles_layout.addWidget(self.label_6, 0, 3, 1, 1)
+
+        # self.label_4 = QLabel(parent=self.centralwidget)
+        # self.label_4.setScaledContents(False)
+        # self.label_4.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.label_4.setObjectName("label_4")
+        # self.video_tiles_layout.addWidget(self.label_4, 1, 1, 1, 1)        
+        
+        # self.label_3 = QLabel(parent=self.centralwidget)
+        # self.label_3.setScaledContents(False)
+        # self.label_3.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.label_3.setObjectName("label_3")
+        # self.video_tiles_layout.addWidget(self.label_3, 1, 2, 1, 1)
+        
+        # self.label = QLabel(parent=self.centralwidget)
+        # self.label.setScaledContents(False)
+        # self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.label.setObjectName("label")
+        # self.video_tiles_layout.addWidget(self.label, 1, 3, 1, 1)
+        ##################################################################
+
+        self.button_control_layout = QHBoxLayout()
         self.button_control_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         self.button_control_layout.setContentsMargins(10, 10, 10, 10)
         self.button_control_layout.setSpacing(10)
@@ -98,8 +117,7 @@ class MeetingPage(object):
             40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
         self.button_control_layout.addItem(spacerItem)
-
-        #  Show participant page CTA
+        
         self.participants_cta = QPushButton(parent=self.centralwidget)
         self.participants_cta.clicked.connect(self.show_participants)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
@@ -131,7 +149,7 @@ class MeetingPage(object):
         self.participants_cta.setFlat(True)
         self.participants_cta.setObjectName("participants_cta")
         self.button_control_layout.addWidget(self.participants_cta)
-
+        
         self.chat_cta = QPushButton(parent=self.centralwidget)
         self.chat_cta.clicked.connect(self.show_chat)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -157,7 +175,7 @@ class MeetingPage(object):
         self.chat_cta.setFlat(True)
         self.chat_cta.setObjectName("chat_cta")
         self.button_control_layout.addWidget(self.chat_cta)
-
+        
         self.end_meeting_cta = QPushButton(parent=self.centralwidget)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -180,10 +198,9 @@ class MeetingPage(object):
         )
         self.end_meeting_cta.setObjectName("end_meeting_cta")
         self.button_control_layout.addWidget(self.end_meeting_cta)
-
-        self.vertical_layout.addWidget(self.video_container)
-        self.vertical_layout.addWidget(self.control_container)
-        self.meeting_layout.addLayout(self.vertical_layout)
+        self.video_tiles_layout.addLayout(self.button_control_layout, 3, 1, 1, 3)
+        # self.meeting_layout.addLayout(self.video_tiles_layout)
+        self.meeting_layout.addWidget(self.video_container)
 
         self.stackedWidget = QStackedWidget(parent=self.centralwidget)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
@@ -201,35 +218,44 @@ class MeetingPage(object):
         
         self.participants_page = ParticipantScreen()
         self.participants_page.setObjectName("Participants")
+        # self.participants_page_title = QLabel(parent=self.participants_page)
+        # self.participants_page_title.setGeometry(QRect(20, 30, 161, 16))
+        # self.participants_page_title.setObjectName("participants_page_title")
         self.stackedWidget.addWidget(self.participants_page)
         
         self.chat_page = ChatScreen(self.user_details, self.meeting_id, self.socket_client)
         self.chat_page.setObjectName("Chat")
+        # self.chat_page_title = QLabel(parent=self.chat_page)
+        # self.chat_page_title.setGeometry(QRect(10, 20, 181, 16))
+        # self.chat_page_title.setObjectName("chat_page_title")
         self.stackedWidget.addWidget(self.chat_page)
 
-        self.meeting_layout.addWidget(self.stackedWidget)
+        self.meeting_layout.addWidget(self.stackedWidget)        
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.stackedWidget.setCurrentIndex(1)
-        self.chat_cta.clicked.connect(self.show_chat)
-        self.participants_cta.clicked.connect(self.show_participants)
+        self.stackedWidget.setCurrentIndex(0)
+        self.end_meeting_cta.clicked.connect(MainWindow.close)  # type: ignore
         QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", f"{self.user_name} - Meeting ({self.meeting_id})"))
         self.self_video.setText(_translate("MainWindow", f"{self.user_name}"))
-        
+        # self.label_6.setText(_translate("MainWindow", "Participant_Video"))
+        # self.label_3.setText(_translate("MainWindow", "Participant_Video"))
+        # self.label_5.setText(_translate("MainWindow", "Participant_Video"))
+        # self.label.setText(_translate("MainWindow", "Participant_Video"))        
+        # self.label_4.setText(_translate("MainWindow", "Participant_Video"))
         self.participants_cta.setText(_translate("MainWindow", "Participants"))
         self.chat_cta.setText(_translate("MainWindow", "Chat"))
         self.end_meeting_cta.setText(_translate("MainWindow", "End Meeting"))
 
     def show_participants(self):
-        self.stackedWidget.setCurrentIndex(1)
+        self.stackedWidget.setCurrentIndex(0)
 
     def show_chat(self):
-        self.stackedWidget.setCurrentIndex(0)
+        self.stackedWidget.setCurrentIndex(1)
 
     def subscribeToParticpants(self):
         time.sleep(2)
@@ -316,14 +342,22 @@ class MeetingPage(object):
         
 
     def addLabel(self, id, pos):
-        self.participants_info[id]["label"] = QLabel(self.participants_info[id]["name"], parent=self.video_container)
-        self.participants_info[id]["label"].setStyleSheet(
-            "color: rgb(255, 255, 255);"
-        )
+        self.participants_info[id]["label"] = QLabel(self.participants_info[id]["name"], parent=self.centralwidget)
+        # self.participants_info[id]["label"].setStyleSheet(
+        #     "color: rgb(255, 255, 255);"
+        # )
         self.participants_info[id]["label"].setScaledContents(True)
-        self.participants_info[id]["label"].setObjectName(self.participants_info[id]["name"])
         self.participants_info[id]["label"].setAlignment(Qt.AlignmentFlag.AlignCenter)
-        video_positioon = self.positions[pos]
-        self.video_tiles_layout.addWidget(self.participants_info[id]["label"], video_positioon[0], video_positioon[1], video_positioon[2], video_positioon[3])
+        video_position = self.positions[pos]
+        self.video_tiles_layout.addWidget(self.participants_info[id]["label"], video_position[0], video_position[1], video_position[2], video_position[3])
 
-        
+
+# if __name__ == "__main__":
+#     import sys
+
+#     app = QApplication(sys.argv)
+#     MainWindow = QMainWindow()
+#     ui = MeetingPage()
+#     ui.setupUi(MainWindow)
+#     MainWindow.show()
+#     sys.exit(app.exec())
