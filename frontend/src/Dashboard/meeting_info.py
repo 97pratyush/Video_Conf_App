@@ -57,6 +57,7 @@ class MeetingInfoDialog(QDialog):
             return super().accept()
         except Exception as e:
             print("Exception occured rendering Meeting Page:", e)
+            self.close()
             return super().reject()
         
     def closeEvent(self, event):

@@ -69,7 +69,7 @@ class MeetingPage(QMainWindow):
         self.meeting_layout.setSpacing(0)
         self.video_tiles_layout.setObjectName("gridLayout")
         
-        # Video Display labels
+        # Self Video Display Tile
         self.self_video = QLabel(f"{self.user_name}", parent=self.video_container)
         self.self_video.setStyleSheet(
             "color: rgb(255, 255, 255);"

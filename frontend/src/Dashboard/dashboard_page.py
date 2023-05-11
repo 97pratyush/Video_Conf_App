@@ -4,8 +4,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
     QPushButton,
-    QApplication,
-    QMainWindow,
     QHBoxLayout,
     QSizePolicy,
     QSpacerItem,
@@ -207,7 +205,7 @@ class DashboardPage(QWidget):
         if response.status_code == 200:
             state.in_meeting = True
             meeting_id = response.json()['meetingId']
-            print("Meeting Id: ", meeting_id)
+            # print("Meeting Id: ", meeting_id)
             self.meeting_dialog = MeetingInfoDialog(self.user_details, meeting_id)
             self.meeting_dialog.show()
 
@@ -217,16 +215,6 @@ class DashboardPage(QWidget):
 
     @on('state.in_meeting')
     def on_meeting_status_change(self):
-        print(f"Is user in meeting: {state.in_meeting}")
+        # print(f"Is user in meeting: {state.in_meeting}")
         self.create_meeting_cta.setDisabled(state.in_meeting)
         self.join_meeting_cta.setDisabled(state.in_meeting)
-
-if __name__ == "__main__":
-    import sys
-
-    app = QApplication(sys.argv)
-    MainWindow = QMainWindow()
-    ui = DashboardPage()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec())

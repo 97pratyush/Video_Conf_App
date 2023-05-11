@@ -5,8 +5,8 @@ import time
 
 class ChatScreen(QWidget):
 
-    def __init__(self, user_details, meeting_id, socket_client):
-        super().__init__()
+    def __init__(self, user_details, meeting_id, socket_client, parent=None):
+        super(ChatScreen, self).__init__(parent)
 
         self.user_details = user_details
         self.user_id = user_details['id']

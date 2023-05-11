@@ -3,8 +3,8 @@ from PySide6.QtWidgets import QWidget, QLabel, QListView, QVBoxLayout, QListWidg
 
 class ParticipantScreen(QWidget):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super(ParticipantScreen, self).__init__(parent)
 
         layout = QVBoxLayout()
         self.setLayout(layout)
