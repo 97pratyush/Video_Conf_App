@@ -92,7 +92,7 @@ class LoginPage(QWidget):
             # print(self.response['message'])
             self.data = self.response.json()
             if self.response.status_code == 401:
-                self.error_label.setText("Your login attempt has failed. Make sure the email and password are correct.")
+                self.error_label.setText("Login failed. Make sure the email and password are correct.")
             elif self.response.status_code == 200:
                 
                 self.user_id = self.data['id']

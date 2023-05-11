@@ -40,7 +40,7 @@ class SendandDisplayVideo(QThread):
         # Open a subprocess to send video
         self.send_process_opencv = subprocess.Popen(send_command_opencv, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        self.capture = cv2.VideoCapture(cv2.CAP_V4L2) # 0 means default camera at 0 index
+        self.capture = cv2.VideoCapture(cv2.CAP_V4L2) # V4L2 - Video for Linux 2. Can also put '0' to access camera at 0 index
         self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, const.FRAME_WIDTH)
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, const.FRAME_HEIGHT)
 
