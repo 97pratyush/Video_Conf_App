@@ -10,12 +10,11 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QStackedWidget,
 )
-from PySide6.QtCore import Qt, QSize, QMetaObject, QCoreApplication, QRect
+from PySide6.QtCore import Qt, QSize, QMetaObject, QCoreApplication
 from Meeting.chat import ChatScreen
 from Meeting.participants import ParticipantScreen
 from Meeting.socket_client import SocketClient
 from constant import *
-from style import end_meeting_cta_style
 from ffpyplayer.player import MediaPlayer
 from Streaming.receive_stream import ReceiveStream
 import time, json

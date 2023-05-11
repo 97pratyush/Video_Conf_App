@@ -1,6 +1,5 @@
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel
 from ffpyplayer.player import MediaPlayer
 import cv2, qimage2ndarray, numpy, time, constant as const
 

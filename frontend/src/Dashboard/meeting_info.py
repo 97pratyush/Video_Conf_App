@@ -1,8 +1,9 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QSizePolicy
 from PySide6.QtCore import Qt, QSize
 from style import primary_cta_style
-from Meeting.start_meeting_new import StartMeeting
-
+from Meeting.meeting_page import MeetingPage
+from api_requests import end_meeting
+from app_state import state
 
 class MeetingInfoDialog(QDialog):
     def __init__(self, user_details, meeting_id, parent=None):
@@ -14,7 +15,7 @@ class MeetingInfoDialog(QDialog):
         self.user_details = user_details
         self.user_id = user_details["id"]
         self.user_name = user_details["name"]
-        self.meeting_id = meeting_id
+        self.meeting_id = int(meeting_id)
 
         self.meeting_info_label = QLabel(
             f"<font size=5>Hi {self.user_name}, share this meeting id with your attendees. <br/> Meeting Id: {self.meeting_id}</font>",
@@ -27,7 +28,6 @@ class MeetingInfoDialog(QDialog):
             "QLabel"
             "{"
             "color : black;"
-            'font-family : "Georgia", monospace;'
             "margin-left : 100px;"
             "margin-right : 100px;"
             "}"
@@ -51,6 +51,22 @@ class MeetingInfoDialog(QDialog):
         self.setLayout(self.layout)
 
     def accept(self) -> None:
-        self.start_meeting = StartMeeting(self.user_details, self.meeting_id)
-        # self.start_meeting.show()
-        return super().accept()
+        try:
+            self.meeting_page = MeetingPage(self.user_details, self.meeting_id)
+            self.meeting_page.show()
+            return super().accept()
+        except Exception as e:
+            print("Exception occured rendering Meeting Page:", e)
+            return super().reject()
+        
+    def closeEvent(self, event):
+        state.in_meeting = False
+        try:
+            end_meeting(self.user_id, self.meeting_id)            
+            print("Ending call and closing streams")
+        except Exception as e:
+            print("Exception occured during end meeting :", e)
+        finally:
+            self.close()
+
+        super().closeEvent(event)

@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSpacerItem,
 )
-from PySide6.QtCore import Qt, QSize, QMetaObject, QCoreApplication
+from PySide6.QtCore import Qt, QSize
 from Dashboard.join_meeting import JoinMeetingDialog
 from Dashboard.meeting_info import MeetingInfoDialog
 from api_requests import create_meeting

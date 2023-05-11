@@ -1,9 +1,7 @@
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import QWidget, QLabel, QListView, QVBoxLayout, QListWidget, QListWidgetItem, QLineEdit, QPushButton
 from PySide6.QtGui import QColor, QBrush
-import json
 import time
-from style import primary_cta_style
 
 class ChatScreen(QWidget):
 

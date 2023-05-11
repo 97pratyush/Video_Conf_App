@@ -11,20 +11,23 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSpacerItem,
     QVBoxLayout,
-    QListWidgetItem
+    QListWidgetItem,
+    QMainWindow
 )
 from Meeting.chat import ChatScreen
 from Meeting.participants import ParticipantScreen
 from Meeting.socket_client import SocketClient
 from constant import *
-from style import end_meeting_cta_style
-from ffpyplayer.player import MediaPlayer
 from Streaming.receive_stream import ReceiveStream
+from app_state import state
+from api_requests import end_meeting
+from Streaming.send_and_display_video import SendandDisplayVideo
 import time, json
 import Meeting.resources
 
-class MeetingPage(object):
+class MeetingPage(QMainWindow):
     def __init__(self, user_details, meeting_id) -> None:
+        super().__init__()
         self.user_details = user_details
         self.user_id = user_details['id']
         self.user_name = user_details['name']
@@ -35,14 +38,14 @@ class MeetingPage(object):
         self.socket_client = SocketClient(meeting_id, user_details['id'], user_details['name'])
         self.socket_client.message_received.connect(self.receive_participants)
         self.subscribeToParticpants()
-        
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1191, 691)        
-        MainWindow.setStyleSheet(
+
+        self.setWindowTitle(f"{self.user_name} - Meeting ({self.meeting_id})")
+        self.setObjectName("Meeting_Window")
+        self.resize(1191, 691)        
+        self.setStyleSheet(
             "background-color: rgb(0, 0, 0);\n" "color: rgb(255, 255, 255);"
         )
-        self.centralwidget = QWidget(parent=MainWindow)
+        self.centralwidget = QWidget(parent=self)
         self.centralwidget.setObjectName("centralwidget")
 
         self.vertical_layout = QVBoxLayout()
@@ -116,7 +119,7 @@ class MeetingPage(object):
         self.button_control_layout.addItem(spacerItem)
 
         #  Show participant page CTA
-        self.participants_cta = QPushButton(parent=self.centralwidget)
+        self.participants_cta = QPushButton("Participants", parent=self.centralwidget)
         self.participants_cta.clicked.connect(self.show_participants)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -148,7 +151,7 @@ class MeetingPage(object):
         self.participants_cta.setObjectName("participants_cta")
         self.button_control_layout.addWidget(self.participants_cta)
 
-        self.chat_cta = QPushButton(parent=self.centralwidget)
+        self.chat_cta = QPushButton("Chat", parent=self.centralwidget)
         self.chat_cta.clicked.connect(self.show_chat)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -174,7 +177,7 @@ class MeetingPage(object):
         self.chat_cta.setObjectName("chat_cta")
         self.button_control_layout.addWidget(self.chat_cta)
 
-        self.end_meeting_cta = QPushButton(parent=self.centralwidget)
+        self.end_meeting_cta = QPushButton("End Meeting", parent=self.centralwidget)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -225,22 +228,23 @@ class MeetingPage(object):
         self.stackedWidget.addWidget(self.chat_page)
 
         self.meeting_layout.addWidget(self.stackedWidget)
-        MainWindow.setCentralWidget(self.centralwidget)
+        self.setCentralWidget(self.centralwidget)
 
-        self.retranslateUi(MainWindow)
         self.stackedWidget.setCurrentIndex(0)
         self.chat_cta.clicked.connect(self.show_chat)
         self.participants_cta.clicked.connect(self.show_participants)
-        QMetaObject.connectSlotsByName(MainWindow)
+        self.end_meeting_cta.clicked.connect(self.close)
+        QMetaObject.connectSlotsByName(self)
+        self.start_stream()
 
-    def retranslateUi(self, MainWindow):
-        _translate = QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", f"{self.user_name} - Meeting ({self.meeting_id})"))
-        self.self_video.setText(_translate("MainWindow", f"{self.user_name}"))
-        
-        self.participants_cta.setText(_translate("MainWindow", "Participants"))
-        self.chat_cta.setText(_translate("MainWindow", "Chat"))
-        self.end_meeting_cta.setText(_translate("MainWindow", "End Meeting"))
+    def start_stream(self):
+        try:
+            self.thread_send_stream = SendandDisplayVideo(self.self_video, self.meeting_id, self.user_id)
+            self.thread_send_stream.start()
+        except Exception as e:
+            print("Exception occured while sending stream :", e)
+        finally:
+            self.thread_send_stream.stop()
 
     def show_participants(self):
         self.stackedWidget.setCurrentIndex(0)
@@ -328,17 +332,14 @@ class MeetingPage(object):
         try:
             url = f'{RTMP_URL}/{self.meeting_id}_{user_id}'
             self.participants_info[user_id]["stream"] = ReceiveStream(url, user_id)
-            self.participants_info[user_id]["stream"].participant_frame_changed.connect(self.on_frame_changed)
+            self.participants_info[user_id]["stream"].participant_frame_changed.connect(lambda pixmap, id=user_id: self.participants_info[id]["label"].setPixmap(pixmap))
             self.participants_info[user_id]["stream"].start()
 
         except Exception as e:
             print("Exception occured while receiving stream :", e)
 
-    def on_frame_changed(self, pixmap, id):
-        # print("pixmap",pixmap)
-        # print("id",id)
-        # # Change label for each participant
-        self.participants_info[id]["label"].setPixmap(pixmap)
+    # def on_frame_changed(self, pixmap, id):
+    #     self.participants_info[id]["label"].setPixmap(pixmap)
         
 
     def addLabel(self, id, pos):
@@ -372,4 +373,20 @@ class MeetingPage(object):
         self.participant_video_tile_layout.addWidget(self.participants_info[id]["nameLabel"])
         self.video_tiles_layout.addLayout(self.participant_video_tile_layout, video_positioon[0], video_positioon[1], video_positioon[2], video_positioon[3])
 
-        
+    def closeEvent(self, event):
+        print("Window Closed")
+
+        state.in_meeting = False
+        try:
+            self.socket_client.close_socket()
+            # Stop sending and displaying own video
+            if self.thread_send_stream:
+                self.thread_send_stream.stop()
+            end_meeting(self.user_id, self.meeting_id)            
+            print("Ending call and closing streams")
+        except Exception as e:
+            print("Exception occured during end meeting :", e)
+        finally:
+            self.close()
+
+        super().closeEvent(event)

@@ -3,7 +3,7 @@ from PySide6.QtCore import QSize
 from PySide6.QtGui import QIntValidator
 from style import primary_cta_style, textbox_style
 from api_requests import join_meeting
-from Meeting.start_meeting_new import StartMeeting
+from Meeting.meeting_page import MeetingPage
 
 class JoinMeetingDialog(QDialog):
     def __init__(self, user_details, parent=None):
@@ -55,8 +55,13 @@ class JoinMeetingDialog(QDialog):
             meeting_id = int(meeting_id)
             response = join_meeting(self.user_id, meeting_id)
             if response.status_code == 200:
-                self.start_meeting = StartMeeting(self.user_details, meeting_id)
-                return super().accept()
+                try:
+                    self.meeting_page = MeetingPage(self.user_details, meeting_id)
+                    self.meeting_page.show()
+                    return super().accept()
+                except Exception as e:
+                    print("Exception occured during Meeting Page, :", e)
+                    return super().reject()
             else:
                 self.error_label.setText("Incorrect meeting id.")
         else:
