@@ -265,7 +265,7 @@ class MeetingPage(QMainWindow):
         
     def receive_participants(self, data):
         try:
-            if data["type"] == "participantListUpdated":
+            if data["type"] == f'{PARTICIPANTS_MESSAGE}':
                 self.check_updated_participants(data["participantList"])
                 pass
         except Exception as e:
