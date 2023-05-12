@@ -2,6 +2,7 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import QWidget, QLabel, QListView, QVBoxLayout, QListWidget, QListWidgetItem, QLineEdit, QPushButton
 from PySide6.QtGui import QColor, QBrush
 import time
+from constant import CHAT_TOPIC
 
 class ChatScreen(QWidget):
 
@@ -64,7 +65,7 @@ class ChatScreen(QWidget):
         time.sleep(2)
         if self.socket_client.get_connection_state():
             print("Connected")
-            subscriptionInfo = {"type": "getChatMessages"}
+            subscriptionInfo = {"type": f'{CHAT_TOPIC}'}
             self.socket_client.send_message(subscriptionInfo)
         else:
             print("Not connected to chat topic")
