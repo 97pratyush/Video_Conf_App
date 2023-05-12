@@ -23,7 +23,12 @@ WS_URL = "ws://2.tcp.ngrok.io:14936"
 # API URL
 URL = "https://6f0c-2601-646-9d01-1da0-4a80-d63-becb-76c2.ngrok-free.app"
 
+# Socket Constants - Meeting Participants
 PARTICIPANTS_TOPIC = 'subscribeToParticipantList'
 PARTICIPANTS_MESSAGE = 'participantListUpdated'
 
+# Socket Constants - Chat Messages
 CHAT_TOPIC = 'getChatMessages'
+CHAT_HISTORY_TOPIC = 'chatMessageHistory'
+CHAT_SEND_MESSAGE = 'sendChatMessage'
+CHAT_NEW_MESSAGE = 'newChatMessage'

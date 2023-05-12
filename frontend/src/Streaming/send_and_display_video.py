@@ -75,7 +75,7 @@ class SendandDisplayVideo(QThread):
                             self.capture.release()
                         return
         except Exception as e:
-            print("Exception occured while sending video via opencv :", e)
+            print("Exception occured while sending stream to server :", e)
         finally:
             # if self.send_process_opencv.stdin:
             #     self.send_process_opencv.stdin.close()

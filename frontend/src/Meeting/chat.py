@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import QWidget, QLabel, QListView, QVBoxLayout, QListWidget, QListWidgetItem, QLineEdit, QPushButton
 from PySide6.QtGui import QColor, QBrush
 import time
-from constant import CHAT_TOPIC
+from constant import CHAT_TOPIC, CHAT_HISTORY_TOPIC, CHAT_SEND_MESSAGE, CHAT_NEW_MESSAGE
 
 class ChatScreen(QWidget):
 
@@ -73,14 +73,14 @@ class ChatScreen(QWidget):
     def send_new_chat_message(self):
         messageText = self.message_input.text()
         self.message_input.clear()
-        newChatMessage = {"type": "sendChatMessage", "message": messageText}
+        newChatMessage = {"type": f'{CHAT_SEND_MESSAGE}', "message": messageText}
         self.socket_client.send_message(newChatMessage)
 
     def receive_messages(self, data):
         try:
-            if data["type"] == "chatMessageHistory":
+            if data["type"] == f'{CHAT_HISTORY_TOPIC}':
                 self.loadChatMessagehistory(data["history"])
-            elif data["type"] == "newChatMessage":
+            elif data["type"] == f'{CHAT_NEW_MESSAGE}':
                 self.addNewChatMessage(data["sender"], data["message"])
         except Exception as e:
             print(e)
