@@ -52,7 +52,9 @@ class SendandDisplayVideo(QThread):
             while(True):
                 if self.close_called == True:
                     if self.send_process_opencv:
-                        self.send_process_opencv.terminate()
+                        self.send_process_opencv.kill()
+                    if self.capture:
+                        self.capture.release()
                     break
                 ret, frame = self.capture.read()
                 if ret:
@@ -70,7 +72,7 @@ class SendandDisplayVideo(QThread):
                         # if self.send_process_opencv.stdin:
                         #     self.send_process_opencv.stdin.close()
                         if self.send_process_opencv:
-                            self.send_process_opencv.terminate()
+                            self.send_process_opencv.kill()
                         if self.capture:
                             self.capture.release()
                         return
@@ -80,7 +82,7 @@ class SendandDisplayVideo(QThread):
             # if self.send_process_opencv.stdin:
             #     self.send_process_opencv.stdin.close()
             if self.send_process_opencv:
-                self.send_process_opencv.terminate()
+                self.send_process_opencv.kill()
             if self.capture:
                 self.capture.release()
 
@@ -99,6 +101,6 @@ class SendandDisplayVideo(QThread):
     def stop(self):
         self.close_called = True
         if self.send_process_opencv:
-            self.send_process_opencv.terminate()
+            self.send_process_opencv.kill()
         if self.capture:
             self.capture.release()

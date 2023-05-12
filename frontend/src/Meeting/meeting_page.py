@@ -378,12 +378,13 @@ class MeetingPage(QMainWindow):
 
         state.in_meeting = False
         try:
+            print("Ending call and closing streams")
             self.socket_client.close_socket()
             # Stop sending and displaying own video
             if self.thread_send_stream:
                 self.thread_send_stream.stop()
-            end_meeting(self.user_id, self.meeting_id)            
-            print("Ending call and closing streams")
+            end_meeting(self.user_id, self.meeting_id)  
+            print("Socket and video streams closed")
         except Exception as e:
             print("Exception occured during end meeting :", e)
         finally:
